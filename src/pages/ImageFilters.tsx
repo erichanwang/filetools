@@ -1,6 +1,6 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import DropZone from '../components/DropZone'
-import { SlidersHorizontal, Download, RefreshCw, Undo2, Loader2, Contrast, Sun, Droplets, Sparkles } from 'lucide-react'
+import { SlidersHorizontal, Download, RefreshCw, Undo2, Contrast, Sun, Droplets, Sparkles } from 'lucide-react'
 
 interface FilterSettings {
   brightness: number
@@ -49,7 +49,6 @@ const presets = [
 export default function ImageFilters() {
   const [source, setSource] = useState<{ file: File; url: string } | null>(null)
   const [settings, setSettings] = useState<FilterSettings>({ ...defaults })
-  const canvasRef = useRef<HTMLCanvasElement>(null)
   const imgRef = useRef<HTMLImageElement>(null)
 
   const handleFiles = useCallback((files: File[]) => {
@@ -213,7 +212,6 @@ export default function ImageFilters() {
         </>
       )}
 
-      <canvas ref={canvasRef} className="hidden" />
     </div>
   )
 }

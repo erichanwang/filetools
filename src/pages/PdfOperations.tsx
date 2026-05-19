@@ -2,33 +2,35 @@ import { useState, useCallback } from 'react'
 import DropZone from '../components/DropZone'
 import {
   FileText, Download, X, Combine, Scissors, FileArchive, Loader2,
-  CheckCircle2, Plus, ArrowRight, GripVertical
+  CheckCircle2, GripVertical
 } from 'lucide-react'
 import { PDFDocument } from 'pdf-lib'
 
 type PdfMode = 'merge' | 'split' | 'compress'
 
+type PdfResult = { name: string; blob: Blob; originalSize?: number }
+
 export default function PdfOperations() {
   const [mode, setMode] = useState<PdfMode>('merge')
   const [files, setFiles] = useState<File[]>([])
   const [processing, setProcessing] = useState(false)
-  const [result, setResult] = useState<{ name: string; blob: Blob } | null>(null)
+  const [results, setResults] = useState<PdfResult[]>([])
   const [splitRange, setSplitRange] = useState('')
 
   const handleFiles = useCallback((newFiles: File[]) => {
     setFiles((prev) => [...prev, ...newFiles])
-    setResult(null)
+    setResults([])
   }, [])
 
   const removeFile = useCallback((index: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== index))
-    setResult(null)
+    setResults([])
   }, [])
 
   const merge = useCallback(async () => {
     if (files.length < 2) return
     setProcessing(true)
-    setResult(null)
+    setResults([])
 
     try {
       const mergedPdf = await PDFDocument.create()
@@ -39,7 +41,7 @@ export default function PdfOperations() {
         pages.forEach((page) => mergedPdf.addPage(page))
       }
       const pdfBytes = await mergedPdf.save()
-      setResult({ name: 'merged.pdf', blob: new Blob([pdfBytes], { type: 'application/pdf' }) })
+      setResults([{ name: 'merged.pdf', blob: new Blob([pdfBytes as unknown as BlobPart], { type: 'application/pdf' }) }])
     } catch (err) {
       console.error(err)
     } finally {
@@ -50,7 +52,7 @@ export default function PdfOperations() {
   const split = useCallback(async () => {
     if (!files.length) return
     setProcessing(true)
-    setResult(null)
+    setResults([])
 
     try {
       const bytes = await files[0].arrayBuffer()
@@ -59,7 +61,6 @@ export default function PdfOperations() {
 
       let pagesToExtract: number[] = []
       if (splitRange.trim()) {
-        // Parse ranges like "1-3,5,7-9"
         const parts = splitRange.split(',')
         for (const part of parts) {
           const range = part.trim().split('-')
@@ -80,7 +81,7 @@ export default function PdfOperations() {
       const pages = await newPdf.copyPages(pdf, pagesToExtract)
       pages.forEach((page) => newPdf.addPage(page))
       const pdfBytes = await newPdf.save()
-      setResult({ name: 'split.pdf', blob: new Blob([pdfBytes], { type: 'application/pdf' }) })
+      setResults([{ name: 'split.pdf', blob: new Blob([pdfBytes as unknown as BlobPart], { type: 'application/pdf' }) }])
     } catch (err) {
       console.error(err)
     } finally {
@@ -91,17 +92,22 @@ export default function PdfOperations() {
   const compress = useCallback(async () => {
     if (!files.length) return
     setProcessing(true)
-    setResult(null)
+    setResults([])
 
     try {
-      // pdf-lib doesn't have native compression, but re-saving optimizes
+      const compressedResults: PdfResult[] = []
       for (const file of files) {
         const bytes = await file.arrayBuffer()
         const pdf = await PDFDocument.load(bytes)
         const compressed = await pdf.save({ useObjectStreams: true })
         const name = file.name.replace('.pdf', '_compressed.pdf')
-        setResult({ name, blob: new Blob([compressed], { type: 'application/pdf' }) })
+        compressedResults.push({
+          name,
+          blob: new Blob([compressed as unknown as BlobPart], { type: 'application/pdf' }),
+          originalSize: file.size,
+        })
       }
+      setResults(compressedResults)
     } catch (err) {
       console.error(err)
     } finally {
@@ -115,15 +121,18 @@ export default function PdfOperations() {
     else compress()
   }, [mode, merge, split, compress])
 
-  const download = useCallback(() => {
-    if (!result) return
+  const downloadOne = useCallback((result: PdfResult) => {
     const url = URL.createObjectURL(result.blob)
     const a = document.createElement('a')
     a.href = url
     a.download = result.name
     a.click()
     URL.revokeObjectURL(url)
-  }, [result])
+  }, [])
+
+  const downloadAll = useCallback(() => {
+    results.forEach((r) => downloadOne(r))
+  }, [results, downloadOne])
 
   const sortedFiles = [...files].sort((a, b) => a.name.localeCompare(b.name))
 
@@ -150,7 +159,7 @@ export default function PdfOperations() {
         ]).map((m) => (
           <button
             key={m.key}
-            onClick={() => { setMode(m.key); setFiles([]); setResult(null) }}
+            onClick={() => { setMode(m.key); setFiles([]); setResults([]) }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
               mode === m.key
                 ? 'bg-red-600 text-white shadow-lg shadow-red-600/25'
@@ -175,7 +184,7 @@ export default function PdfOperations() {
           />
           {sortedFiles.length > 0 && (
             <div className="glass rounded-2xl p-5">
-              <h3 className="text-xs font-medium text-slate-400 mb-3">Files (drag to reorder — sorted by name)</h3>
+              <h3 className="text-xs font-medium text-slate-400 mb-3">Files (sorted by name)</h3>
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {sortedFiles.map((file, i) => (
                   <div key={i} className="flex items-center justify-between bg-slate-800/50 rounded-xl px-4 py-3">
@@ -222,7 +231,7 @@ export default function PdfOperations() {
               <div className="flex items-center gap-3 bg-slate-800/50 rounded-xl px-4 py-3">
                 <FileText className="w-4 h-4 text-red-400" />
                 <span className="text-sm text-slate-300">{files[0].name}</span>
-                <button onClick={() => { setFiles([]); setResult(null) }} className="ml-auto p-1 hover:bg-slate-700 rounded-lg">
+                <button onClick={() => { setFiles([]); setResults([]) }} className="ml-auto p-1 hover:bg-slate-700 rounded-lg">
                   <X className="w-4 h-4 text-slate-500" />
                 </button>
               </div>
@@ -292,24 +301,50 @@ export default function PdfOperations() {
         </button>
       )}
 
-      {/* Result */}
-      {result && (
+      {/* Results */}
+      {results.length > 0 && (
         <div className="glass rounded-2xl p-5 mt-6 animate-fade-in-up">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-              <div>
-                <p className="text-sm text-slate-300">{result.name}</p>
-                <p className="text-xs text-slate-500">{(result.blob.size / 1024).toFixed(1)} KB</p>
-              </div>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-semibold text-white">
+                {results.length} file{results.length > 1 ? 's' : ''} processed
+              </h3>
             </div>
-            <button
-              onClick={download}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-all duration-200"
-            >
-              <Download className="w-4 h-4" />
-              Download
-            </button>
+            {results.length > 1 && (
+              <button
+                onClick={downloadAll}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-all duration-200"
+              >
+                <Download className="w-4 h-4" />
+                Download all
+              </button>
+            )}
+          </div>
+          <div className="space-y-2">
+            {results.map((r, i) => (
+              <div key={i} className="flex items-center justify-between bg-slate-800/50 rounded-xl px-4 py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm text-slate-300 truncate">{r.name}</p>
+                    <p className="text-xs text-slate-500">
+                      {(r.blob.size / 1024).toFixed(1)} KB
+                      {r.originalSize && (
+                        <span className="text-emerald-400 ml-2">
+                          (was {(r.originalSize / 1024).toFixed(1)} KB)
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => downloadOne(r)}
+                  className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                >
+                  <Download className="w-4 h-4 text-blue-400" />
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       )}

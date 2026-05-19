@@ -5,8 +5,8 @@ import { Shrink, Download, X, Image, Loader2, Maximize2, FileImage } from 'lucid
 export default function ImageCompressor() {
   const [files, setFiles] = useState<{ file: File; url: string }[]>([])
   const [quality, setQuality] = useState(80)
-  const [maxWidth, setMaxWidth] = useState(1920)
-  const [maxHeight, setMaxHeight] = useState(1920)
+  const [maxWidth, setMaxWidth] = useState(16384)
+  const [maxHeight, setMaxHeight] = useState(16384)
   const [processing, setProcessing] = useState(false)
   const [results, setResults] = useState<{ name: string; originalSize: number; compressedSize: number; url: string }[]>([])
 
@@ -105,7 +105,7 @@ export default function ImageCompressor() {
           <h1 className="text-2xl font-bold text-white">Image Compressor</h1>
         </div>
         <p className="text-sm text-slate-400 ml-13">
-          Compress and resize images while preserving visual quality.
+          Compress images while preserving full native resolution. Only resizes if dimensions exceed the limits below.
         </p>
       </div>
 
@@ -134,7 +134,7 @@ export default function ImageCompressor() {
           <div>
             <label className="block text-xs font-medium text-slate-400 mb-2">
               <Maximize2 className="w-3 h-3 inline mr-1" />
-              Max Width (px)
+              Max Width (px)<span className="text-[10px] text-slate-500 ml-1">(default: no limit)</span>
             </label>
             <input
               type="number"
@@ -146,7 +146,7 @@ export default function ImageCompressor() {
           <div>
             <label className="block text-xs font-medium text-slate-400 mb-2">
               <Maximize2 className="w-3 h-3 inline mr-1" />
-              Max Height (px)
+              Max Height (px)<span className="text-[10px] text-slate-500 ml-1">(default: no limit)</span>
             </label>
             <input
               type="number"

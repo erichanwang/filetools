@@ -1,20 +1,12 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback } from 'react'
 import DropZone from '../components/DropZone'
 import { Scissors, Download, Image, RefreshCw, Loader2 } from 'lucide-react'
-
-declare global {
-  function removeBackground(
-    input: HTMLImageElement | HTMLCanvasElement | Blob | ImageData,
-    options?: Record<string, unknown>,
-  ): Promise<Blob>
-}
 
 export default function BackgroundRemover() {
   const [source, setSource] = useState<{ file: File; url: string } | null>(null)
   const [result, setResult] = useState<string | null>(null)
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
 
   const handleFiles = useCallback((files: File[]) => {
     if (files.length) {
@@ -38,8 +30,10 @@ export default function BackgroundRemover() {
         img.src = source.url
       })
 
-      // Scale large images down for performance
-      const maxDim = 1024
+      // Process at full native resolution for maximum quality.
+      // Upper bound of 8192px prevents browser memory issues with extreme images
+      // (the AI model operates at its own internal resolution regardless)
+      const maxDim = 8192
       let w = img.naturalWidth
       let h = img.naturalHeight
       if (w > maxDim || h > maxDim) {
@@ -98,7 +92,7 @@ export default function BackgroundRemover() {
           <h1 className="text-2xl font-bold text-white">Background Remover</h1>
         </div>
         <p className="text-sm text-slate-400 ml-13">
-          Remove image backgrounds using AI — all processing happens locally.
+          Remove image backgrounds using AI — all processing happens locally. Up to 8K native resolution.
         </p>
       </div>
 
@@ -198,8 +192,6 @@ export default function BackgroundRemover() {
         </div>
       )}
 
-      {/* Hidden canvas for processing */}
-      <canvas ref={canvasRef} className="hidden" />
     </div>
   )
 }

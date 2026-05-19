@@ -1,73 +1,75 @@
-# React + TypeScript + Vite
+# 🛠️ FileTools
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**All-in-one file operations toolkit — built with React, powered by your browser.**
 
-Currently, two official plugins are available:
+Convert, compress, edit, extract, and manage your files entirely client-side. No server uploads. Private, fast, and free.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## ✨ Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Feature | Description |
+|---|---|
+| **File Converter** | Convert between PNG, JPEG, WebP, BMP, GIF, ICO |
+| **Background Remover** | AI-powered background removal (up to 8K resolution) |
+| **Image Compressor** | Compress & resize with quality controls and batch support |
+| **Image Filters** | Brightness, contrast, saturation, blur, presets & more |
+| **PDF Tools** | Merge, split, and compress PDFs |
+| **OCR** | Extract text from images with live progress tracking |
+| **Metadata Viewer** | Inspect file type, size, dimensions, and timestamps |
+| **Batch Rename** | Rename files with patterns, numbering, find/replace |
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🚀 Quick Start
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+```bash
+# Install dependencies
+npm install
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+# Start dev server
+npm run dev
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Build for production
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 🧰 Tech Stack
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- **React 19** + **TypeScript**
+- **Vite** (build tool)
+- **Tailwind CSS v4** (styling)
+- **React Router v7** (routing)
+- **Lucide React** (icons)
+
+### Key Libraries
+
+| Library | Purpose |
+|---|---|
+| `@imgly/background-removal` | AI background removal |
+| `tesseract.js` | OCR text extraction |
+| `pdf-lib` | PDF merge, split, compress |
+| `browser-image-compression` | Image compression |
+| `pica` | High-quality image resizing |
+| `react-dropzone` | Drag-and-drop file uploads |
+| `file-saver` | Client-side file downloads |
+| `jszip` | ZIP archive handling |
+
+---
+
+## 🔒 Privacy
+
+All processing runs locally in your browser via Web Workers and Canvas. Files never leave your device.
+
+---
+
+## 📦 Deployment
+
+This is a static React app. Build with `npm run build` and deploy the `dist/` folder to Vercel, Netlify, or any static host.
+
+```bash
+npm run build
+# Deploy dist/
 ```

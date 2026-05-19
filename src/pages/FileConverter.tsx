@@ -2,17 +2,15 @@ import { useState, useCallback } from 'react'
 import DropZone from '../components/DropZone'
 import { ArrowRightLeft, Download, X, Image, CheckCircle2, Loader2 } from 'lucide-react'
 
-const formats = ['PNG', 'JPEG', 'WebP', 'BMP', 'TIFF', 'GIF', 'ICO', 'SVG']
+const formats = ['PNG', 'JPEG', 'WebP', 'BMP', 'GIF', 'ICO']
 
 const mimeMap: Record<string, string> = {
   PNG: 'image/png',
   JPEG: 'image/jpeg',
   WebP: 'image/webp',
   BMP: 'image/bmp',
-  TIFF: 'image/tiff',
   GIF: 'image/gif',
   ICO: 'image/x-icon',
-  SVG: 'image/svg+xml',
 }
 
 export default function FileConverter() {

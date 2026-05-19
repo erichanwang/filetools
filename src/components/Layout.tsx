@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   Home, FileUp, Scissors, Shrink, SlidersHorizontal,
-  FileText, ScanText, Info, Pencil, Menu, X, Zap
+  FileText, ScanText, Info, Pencil, Menu, Zap
 } from 'lucide-react'
 
 const navItems = [
