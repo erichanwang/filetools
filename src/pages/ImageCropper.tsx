@@ -2,7 +2,8 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import DropZone from '../components/DropZone'
 import { useToast } from '../components/Toast'
-import { Crop, Download, RefreshCw, Lock, RotateCw, RotateCcw, FlipHorizontal, FlipVertical, ClipboardPaste } from 'lucide-react'
+import CopyButton from '../components/CopyButton'
+import { Crop, Download, RefreshCw, Lock, RotateCw, RotateCcw, FlipHorizontal, FlipVertical, ClipboardPaste, ZoomIn } from 'lucide-react'
 
 const ASPECTS: Record<string, number | null> = {
   'Free': null,
@@ -24,6 +25,7 @@ export default function ImageCropper() {
   const [dragging, setDragging] = useState(false)
   const [dragCorner, setDragCorner] = useState<string | null>(null)
   const [result, setResult] = useState<string | null>(null)
+  const [zoom, setZoom] = useState(1)
   const imgRef = useRef<HTMLImageElement>(null)
   const { toast } = useToast()
 
@@ -162,6 +164,13 @@ export default function ImageCropper() {
                     aspect === a ? 'bg-teal-600 text-white' : 'bg-stone-800 text-stone-400 hover:text-stone-200'}`}>{a}</motion.button>
               ))}
             </div>
+          </div>
+
+          {/* Zoom + rotation controls */}
+          <div className="glass rounded-2xl p-4 flex flex-wrap items-center gap-3">
+            <label className="text-xs text-stone-400 flex items-center gap-1.5"><ZoomIn className="w-3 h-3" />Zoom</label>
+            <input type="range" min={50} max={200} value={Math.round(zoom * 100)} onChange={(e) => setZoom(Number(e.target.value) / 100)} className="w-32" />
+            <span className="text-xs font-mono text-teal-400">{Math.round(zoom * 100)}%</span>
             <div className="border-l border-stone-700 pl-3 flex gap-1">
               <motion.button onClick={() => setRot(r => r - 90)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                 className="p-2 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-400"><RotateCcw className="w-4 h-4" /></motion.button>
@@ -179,7 +188,7 @@ export default function ImageCropper() {
             <h3 className="text-xs font-medium text-stone-400 mb-3">Crop Area</h3>
             <div id="crop-preview" className="relative inline-block max-w-full overflow-hidden rounded-xl bg-stone-900/50">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img ref={imgRef} src={source.url} alt="Crop" style={{ transform, transition: 'transform 0.2s' }}
+              <img ref={imgRef} src={source.url} alt="Crop" style={{ transform: `${transform} scale(${zoom})`, transition: 'transform 0.2s' }}
                 className="max-w-full max-h-[500px] select-none" draggable={false} />
               {source && (
                 <div className="absolute inset-0">
@@ -208,13 +217,16 @@ export default function ImageCropper() {
               <Crop className="w-4 h-4" />Apply Crop
             </motion.button>
             {result && (
+              <>
               <motion.button onClick={() => { const a = document.createElement('a'); a.href = result; a.download = source.file.name.replace(/\.[^.]+$/, '_cropped.png'); a.click(); toast('Downloaded') }}
                 whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium shadow-lg shadow-emerald-600/20">
                 <Download className="w-4 h-4" />Download
               </motion.button>
+              <CopyButton text={result} label="Copy" iconSize="w-4 h-4" />
+              </>
             )}
-            <motion.button onClick={() => { if (source) URL.revokeObjectURL(source.url); if (result) URL.revokeObjectURL(result); setSource(null); setResult(null); setRot(0); setFlipH(false); setFlipV(false) }}
+            <motion.button onClick={() => { if (source) URL.revokeObjectURL(source.url); if (result) URL.revokeObjectURL(result); setSource(null); setResult(null); setRot(0); setFlipH(false); setFlipV(false); setZoom(1) }}
               whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 text-sm font-medium">
               <RefreshCw className="w-4 h-4" />New Image

@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useToast } from '../components/Toast'
-import { Copy, ArrowLeftRight, History, Trash2 } from 'lucide-react'
+import CopyButton from '../components/CopyButton'
+import { ArrowLeftRight, History, Trash2 } from 'lucide-react'
 
 const fadeIn = {
   initial: { opacity: 0, y: 12 },
@@ -114,7 +115,7 @@ export default function ColorConverter() {
     } catch { toast('Invalid color input') }
   }, [input, fromFormat, toast, addToHistory])
 
-  const copyValue = (v: string) => { navigator.clipboard.writeText(v); toast('Copied') }
+
 
   return (
     <motion.div {...fadeIn} className="max-w-3xl mx-auto space-y-6">
@@ -186,12 +187,7 @@ export default function ColorConverter() {
               <div key={item.label} className="flex items-center justify-between">
                 <span className="text-xs text-white/30 font-mono w-8">{item.label}</span>
                 <span className="flex-1 font-mono text-sm text-white/80 ml-4">{item.value}</span>
-                <button
-                  onClick={() => copyValue(item.value)}
-                  className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
-                >
-                  <Copy className="w-3.5 h-3.5 text-white/30" />
-                </button>
+                <CopyButton text={item.value} iconSize="w-3.5 h-3.5" />
               </div>
             ))}
           </div>

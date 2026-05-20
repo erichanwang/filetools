@@ -126,7 +126,7 @@ export default function ImageToPdf() {
                 <CheckCircle2 className="w-5 h-5 text-emerald-400" />
                 <div><p className="text-sm font-semibold text-white">{result.name}</p><p className="text-xs text-stone-400">{(result.blob.size / 1024).toFixed(1)} KB</p></div>
               </div>
-              <motion.button onClick={() => { const a = document.createElement('a'); a.href = result.url; a.download = result.name; a.click(); toast('PDF downloaded') }}
+<motion.button onClick={() => { const a = document.createElement('a'); a.href = result.url; a.download = result.name; a.click(); toast('PDF downloaded') }}
                 whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium shadow-lg shadow-emerald-600/20">
                 <Download className="w-4 h-4" />Download

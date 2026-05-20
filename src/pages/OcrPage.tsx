@@ -3,7 +3,8 @@ import { motion } from 'framer-motion'
 import { recognize } from 'tesseract.js'
 import DropZone from '../components/DropZone'
 import { useToast } from '../components/Toast'
-import { ScanText, Copy, Loader2, Check, Image, FileText, ClipboardPaste } from 'lucide-react'
+import CopyButton from '../components/CopyButton'
+import { ScanText, Loader2, Image, FileText, ClipboardPaste } from 'lucide-react'
 
 export default function OcrPage() {
   const [source, setSource] = useState<{ file: File; url: string } | null>(null)
@@ -11,7 +12,6 @@ export default function OcrPage() {
   const [processing, setProcessing] = useState(false)
   const [progress, setProgress] = useState<{ status: string; progress: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
   const { toast } = useToast()
 
   const handleFiles = useCallback((files: File[]) => {
@@ -79,14 +79,6 @@ export default function OcrPage() {
     }
   }, [source, toast])
 
-  const copyText = useCallback(() => {
-    if (text) {
-      navigator.clipboard.writeText(text)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    }
-  }, [text])
-
   const reset = useCallback(() => {
     if (source) URL.revokeObjectURL(source.url)
     setSource(null)
@@ -130,13 +122,7 @@ export default function OcrPage() {
           <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="glass rounded-2xl p-4 flex flex-col">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-medium text-stone-400">Extracted Text</h3>
-              {text && (
-                <motion.button onClick={copyText} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-1.5 text-xs text-stone-400 hover:text-amber-400 transition-colors">
-                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  {copied ? 'Copied' : 'Copy'}
-                </motion.button>
-              )}
+              {text && <CopyButton text={text} label="Copy" />}
             </div>
             <div className="flex-1 rounded-xl bg-stone-900/50 border border-stone-800 p-4 overflow-y-auto min-h-[300px]">
               {processing ? (

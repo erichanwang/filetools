@@ -307,7 +307,7 @@ export default function BatchRename() {
                         initial="hidden"
                         animate="show"
                         transition={{ delay: i * 0.03 }}
-                        className={`flex items-center gap-4 rounded-xl px-4 py-3 ${changed ? 'bg-amber-500/5' : 'bg-white/[0.02]'}`}
+                        className={`flex items-center gap-4 rounded-xl px-4 py-3 ${changed ? 'bg-amber-500/5' : 'bg-stone-800/30'}`}
                       >
                         <File className="w-4 h-4 text-stone-500 flex-shrink-0" />
                         <div className="flex-1 min-w-0 flex items-center gap-2">

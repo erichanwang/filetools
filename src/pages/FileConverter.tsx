@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import DropZone from '../components/DropZone'
 import FilePreview from '../components/FilePreview'
 import { useToast } from '../components/Toast'
-import { ArrowRightLeft, Download, X, Image, CheckCircle2, Loader2, ClipboardPaste } from 'lucide-react'
+import CopyButton from '../components/CopyButton'
+import { ArrowRightLeft, Download, X, Image, CheckCircle2, Loader2, ClipboardPaste, SlidersHorizontal } from 'lucide-react'
 
 const formats = ['PNG', 'JPEG', 'WebP', 'BMP', 'GIF', 'ICO']
 
@@ -24,6 +25,7 @@ const listItem = {
 export default function FileConverter() {
   const [files, setFiles] = useState<File[]>([])
   const [targetFormat, setTargetFormat] = useState('PNG')
+  const [quality, setQuality] = useState(92)
   const [converting, setConverting] = useState(false)
   const [converted, setConverted] = useState<{ name: string; blob: Blob }[]>([])
   const { toast } = useToast()
@@ -93,7 +95,7 @@ export default function FileConverter() {
               resolve()
             },
             mimeMap[targetFormat],
-            0.95,
+            quality / 100,
           )
         }
         img.onerror = () => {
@@ -114,7 +116,7 @@ export default function FileConverter() {
     if (failed > 0) {
       toast(`${failed} file${failed > 1 ? 's' : ''} failed to convert`, 'error')
     }
-  }, [files, targetFormat, toast])
+  }, [files, targetFormat, quality, toast])
 
   const downloadAll = useCallback(() => {
     converted.forEach(({ name, blob }) => {
@@ -183,6 +185,25 @@ export default function FileConverter() {
             </motion.button>
           ))}
         </div>
+        {targetFormat !== 'PNG' && targetFormat !== 'BMP' && targetFormat !== 'ICO' && (
+          <div className="mt-4 pt-4 border-t border-stone-800/50">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-medium text-stone-400 flex items-center gap-1.5">
+                <SlidersHorizontal className="w-3 h-3" />
+                Quality
+              </label>
+              <span className="text-xs font-mono text-amber-400">{quality}%</span>
+            </div>
+            <input
+              type="range"
+              min={10}
+              max={100}
+              value={quality}
+              onChange={(e) => setQuality(Number(e.target.value))}
+              className="w-full"
+            />
+          </div>
+        )}
       </motion.div>
 
       <motion.div
@@ -325,14 +346,17 @@ export default function FileConverter() {
                       {(item.blob.size / 1024).toFixed(1)} KB
                     </span>
                   </div>
-                  <motion.button
-                    onClick={() => downloadOne(item)}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="p-2 hover:bg-stone-700 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                  >
-                    <Download className="w-4 h-4 text-amber-400" />
-                  </motion.button>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
+                    <CopyButton text={item.name} iconSize="w-3.5 h-3.5" className="p-1.5" />
+                    <motion.button
+                      onClick={() => downloadOne(item)}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      className="p-1.5 hover:bg-stone-700 rounded-lg transition-colors"
+                    >
+                      <Download className="w-3.5 h-3.5 text-amber-400" />
+                    </motion.button>
+                  </div>
                 </motion.div>
               ))}
             </motion.div>

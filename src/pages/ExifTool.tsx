@@ -200,7 +200,7 @@ export default function ExifTool() {
 
 function MetaRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-3 bg-white/[0.02] rounded-xl px-4 py-3">
+    <div className="flex items-center gap-3 bg-stone-800/30 rounded-xl px-4 py-3">
       <span className="text-stone-500">{icon}</span>
       <div className="min-w-0">
         <p className="text-xs text-stone-500">{label}</p>

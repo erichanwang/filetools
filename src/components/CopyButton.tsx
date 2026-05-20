@@ -6,9 +6,10 @@ interface CopyButtonProps {
   text: string
   label?: string
   className?: string
+  iconSize?: string
 }
 
-export default function CopyButton({ text, label, className = '' }: CopyButtonProps) {
+export default function CopyButton({ text, label, className = '', iconSize = 'w-4 h-4' }: CopyButtonProps) {
   const [copied, setCopied] = useState(false)
 
   const copy = useCallback(() => {
@@ -39,7 +40,7 @@ export default function CopyButton({ text, label, className = '' }: CopyButtonPr
             transition={{ duration: 0.2 }}
             className="flex items-center gap-1.5"
           >
-            <Check className="w-4 h-4" />
+            <Check className={`${iconSize}`} />
             <span className="text-xs font-medium">{label || 'Copied!'}</span>
           </motion.span>
         ) : (
@@ -49,7 +50,7 @@ export default function CopyButton({ text, label, className = '' }: CopyButtonPr
             exit={{ scale: 0 }}
             className="flex items-center gap-1.5"
           >
-            <Copy className="w-4 h-4" />
+            <Copy className={`${iconSize}`} />
             {label && <span className="text-xs font-medium">{label}</span>}
           </motion.span>
         )}

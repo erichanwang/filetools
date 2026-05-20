@@ -162,7 +162,7 @@ export default function MetadataViewer() {
                   <motion.button key={i} variants={listItem} initial="hidden" animate="show" transition={{ delay: i * 0.04 }}
                     onClick={() => setSelectedMeta(meta)} whileHover={{ x: 4 }}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm transition-all duration-200 ${
-                      selectedMeta === meta ? 'bg-white/5 text-stone-200 border border-white/10' : 'text-stone-400 hover:text-stone-200 hover:bg-white/[0.02] border border-transparent'}`}>
+                      selectedMeta === meta ? 'bg-stone-700/80 text-stone-200 border border-stone-600/50' : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800/30 border border-transparent'}`}>
                     {getCategoryIcon(meta.category)}
                     <span className="truncate">{meta.name}</span>
                   </motion.button>
@@ -173,7 +173,7 @@ export default function MetadataViewer() {
             {selectedMeta && (
               <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="glass rounded-2xl p-5 lg:col-span-2">
                 <div className="flex items-center gap-3 mb-5">
-                  <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-xl bg-stone-800/50 flex items-center justify-center">
                     {getCategoryIcon(selectedMeta.category)}
                   </div>
                   <div className="min-w-0">
@@ -184,7 +184,7 @@ export default function MetadataViewer() {
                 <motion.div variants={{ show: { transition: { staggerChildren: 0.04 } } }} initial="hidden" animate="show"
                   className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {selectedMeta.details.map((d, i) => (
-                    <motion.div key={i} variants={listItem} className="flex items-center gap-3 bg-white/[0.02] rounded-xl px-4 py-3">
+                    <motion.div key={i} variants={listItem} className="flex items-center gap-3 bg-stone-800/30 rounded-xl px-4 py-3">
                       <span className="text-stone-500">{d.icon}</span>
                       <div className="min-w-0">
                         <p className="text-xs text-stone-500">{d.label}</p>
@@ -193,9 +193,8 @@ export default function MetadataViewer() {
                     </motion.div>
                   ))}
                 </motion.div>
-                {selectedMeta.dimensions && (
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                    className="mt-4 p-4 bg-white/[0.02] rounded-xl">
+                {selectedMeta.dimensions && (                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                    className="mt-4 p-4 bg-stone-800/30 rounded-xl">
                     <p className="text-xs text-stone-500 mb-1">Megapixels</p>
                     <p className="text-sm text-stone-300">
                       {((selectedMeta.dimensions.width * selectedMeta.dimensions.height) / 1000000).toFixed(2)} MP
