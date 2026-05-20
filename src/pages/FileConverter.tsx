@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import DropZone from '../components/DropZone'
+import FilePreview from '../components/FilePreview'
 import { useToast } from '../components/Toast'
 import { ArrowRightLeft, Download, X, Image, CheckCircle2, Loader2, ClipboardPaste } from 'lucide-react'
 
@@ -249,6 +250,15 @@ export default function FileConverter() {
                 </motion.div>
               ))}
             </motion.div>
+
+            {/* File previews */}
+            {files.length > 0 && (
+              <div className="flex gap-3 flex-wrap mt-3">
+                {files.map((file, i) => (
+                  <FilePreview key={`${file.name}-${i}`} file={file} onRemove={() => removeFile(i)} />
+                ))}
+              </div>
+            )}
 
             <motion.button
               onClick={convert}

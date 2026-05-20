@@ -1,0 +1,26 @@
+{
+  "name": "FileTools — 24 Local-First File Utilities",
+  "short_name": "FileTools",
+  "description": "Everything you need for files, images, PDFs, and data — all processed securely in your browser.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0c0a09",
+  "theme_color": "#d97706",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23d97706'/><path d='M16 4L8 18h6l-2 10 10-14h-6l2-10z' fill='white'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "productivity"],
+  "screenshots": [],
+  "shortcuts": [
+    { "name": "File Converter", "url": "/file-converter" },
+    { "name": "PDF Tools", "url": "/pdf-operations" },
+    { "name": "QR Generator", "url": "/qr-generator" },
+    { "name": "Password Generator", "url": "/password-generator" }
+  ]
+}

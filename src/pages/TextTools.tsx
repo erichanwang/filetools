@@ -1,9 +1,9 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { useToast } from '../components/Toast'
 import {
   Type, CaseUpper, CaseLower, Eye, GitCompare, Copy, Trash2,
-  Hash, AlignLeft, ClipboardPaste
+  Hash, AlignLeft, ClipboardPaste, Undo2, Redo2
 } from 'lucide-react'
 
 type Tab = 'counter' | 'case' | 'markdown' | 'diff'
@@ -15,17 +15,48 @@ const tabs: { id: Tab; label: string; icon: typeof Type }[] = [
   { id: 'diff', label: 'Text Diff', icon: GitCompare },
 ]
 
-const fadeIn = {
-  initial: { opacity: 0, y: 12 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.35, ease: 'easeOut' as const }
-}
-
 export default function TextTools() {
   const [activeTab, setActiveTab] = useState<Tab>('counter')
   const [text, setText] = useState('')
   const [diffTextB, setDiffTextB] = useState('')
   const { toast } = useToast()
+
+  // Undo/redo
+  const undoStack = useRef<string[]>([])
+  const redoStack = useRef<string[]>([])
+  const ignoreNext = useRef(false)
+
+  const pushUndo = useCallback((value: string) => {
+    if (ignoreNext.current) { ignoreNext.current = false; return }
+    undoStack.current.push(value)
+    if (undoStack.current.length > 50) undoStack.current.shift()
+    redoStack.current = []
+  }, [])
+
+  const setTextUndoable = useCallback((value: string) => {
+    pushUndo(text)
+    setText(value)
+  }, [text, pushUndo])
+
+  const undo = useCallback(() => {
+    const prev = undoStack.current.pop()
+    if (prev !== undefined) {
+      redoStack.current.push(text)
+      ignoreNext.current = true
+      setText(prev)
+      toast('Undo')
+    }
+  }, [text, toast])
+
+  const redo = useCallback(() => {
+    const next = redoStack.current.pop()
+    if (next !== undefined) {
+      undoStack.current.push(text)
+      ignoreNext.current = true
+      setText(next)
+      toast('Redo')
+    }
+  }, [text, toast])
 
   useEffect(() => {
     const handler = (e: ClipboardEvent) => {
@@ -36,6 +67,7 @@ export default function TextTools() {
           setDiffTextB(pasted)
           toast('Pasted to right panel')
         } else {
+          pushUndo(text)
           setText(pasted)
           toast('Text pasted')
         }
@@ -43,7 +75,22 @@ export default function TextTools() {
     }
     document.addEventListener('paste', handler)
     return () => document.removeEventListener('paste', handler)
-  }, [activeTab, toast])
+  }, [activeTab, toast, text, pushUndo])
+
+  // Ctrl+Z / Ctrl+Shift+Z
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        if (undoStack.current.length > 0) undo()
+      } else if ((e.metaKey || e.ctrlKey) && e.key === 'z' && e.shiftKey) {
+        e.preventDefault()
+        if (redoStack.current.length > 0) redo()
+      }
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [undo, redo])
 
   const stats = {
     chars: text.length,
@@ -101,7 +148,7 @@ export default function TextTools() {
     .replace(/\n/g, '<br/>')
 
   return (
-    <motion.div {...fadeIn} className="max-w-6xl mx-auto space-y-6">
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut' as const }} className="max-w-6xl mx-auto space-y-6">
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold tracking-tight text-white">Text Tools</h1>
         <p className="text-white/50 text-sm">Word counter, case conversion, markdown preview & text diff</p>
@@ -151,13 +198,29 @@ export default function TextTools() {
         <div className="relative">
           <textarea
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => setTextUndoable(e.target.value)}
             placeholder={`Paste or type text here…${
               activeTab === 'markdown' ? ' Supports # Headings, **bold**, *italic*, `code`, - lists' : ''
             }`}
             className="w-full h-64 bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white placeholder-white/20 focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30 resize-none transition-all"
           />
           <div className="absolute bottom-4 right-4 flex gap-2">
+            <button
+              onClick={undo}
+              disabled={undoStack.current.length === 0}
+              className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-colors disabled:opacity-20"
+              title="Undo (Ctrl+Z)"
+            >
+              <Undo2 className="w-4 h-4 text-white/50" />
+            </button>
+            <button
+              onClick={redo}
+              disabled={redoStack.current.length === 0}
+              className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-colors disabled:opacity-20"
+              title="Redo (Ctrl+Shift+Z)"
+            >
+              <Redo2 className="w-4 h-4 text-white/50" />
+            </button>
             <button
               onClick={() => copyText(text)}
               className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
