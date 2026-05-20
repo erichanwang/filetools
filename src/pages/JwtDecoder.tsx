@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useToast } from '../components/Toast'
-import { Key, Copy, Eye, EyeOff, Clock, Info } from 'lucide-react'
+import CopyButton from '../components/CopyButton'
+import { Key, Eye, EyeOff, Clock, Info } from 'lucide-react'
 
 function base64UrlDecode(str: string): string {
   str = str.replace(/-/g, '+').replace(/_/g, '/')
@@ -61,11 +62,6 @@ export default function JwtDecoder() {
       setError('Invalid JWT token: ' + (e instanceof Error ? e.message : 'unable to decode'))
     }
   }, [jwt, toast])
-
-  const copyValue = (v: unknown) => {
-    navigator.clipboard.writeText(typeof v === 'string' ? v : JSON.stringify(v, null, 2))
-    toast('Copied')
-  }
 
   const formatJson = (obj: unknown): string => {
     try { return JSON.stringify(obj, null, 2) ?? '' }
@@ -143,13 +139,7 @@ export default function JwtDecoder() {
               <Key className="w-4 h-4 text-white/30" />
               Payload
             </span>
-            <button
-              onClick={() => copyValue(payload.raw)}
-              className="flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-xs text-white/50 transition-colors"
-            >
-              <Copy className="w-3 h-3" />
-              Copy
-            </button>
+            <CopyButton text={typeof payload.raw === 'string' ? payload.raw as string : JSON.stringify(payload.raw, null, 2)} label="Copy" />
           </div>
 
           {/* Timestamps */}
@@ -185,12 +175,7 @@ export default function JwtDecoder() {
               {signature.slice(0, 40)}…
             </span>
           </div>
-          <button
-            onClick={() => copyValue(signature)}
-            className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
-          >
-            <Copy className="w-3.5 h-3.5 text-white/30" />
-          </button>
+          <CopyButton text={signature} />
         </div>
       )}
     </motion.div>

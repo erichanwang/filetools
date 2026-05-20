@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import DropZone from '../components/DropZone'
 import { useToast } from '../components/Toast'
+import CopyButton from '../components/CopyButton'
 import { Palette, ClipboardPaste, Droplets } from 'lucide-react'
 
 interface Swatch { hex: string; pct: number }
@@ -49,7 +50,6 @@ export default function ColorPalette() {
   const [source, setSource] = useState<string | null>(null)
   const [palette, setPalette] = useState<Swatch[]>([])
   const [count, setCount] = useState(8)
-  const [copiedColor, setCopiedColor] = useState<string | null>(null)
   const { toast } = useToast()
 
   const handleFiles = useCallback((files: File[]) => {
@@ -89,11 +89,7 @@ export default function ColorPalette() {
     return () => document.removeEventListener('paste', handlePaste)
   }, [handleFiles, toast])
 
-  const copyHex = useCallback((hex: string) => {
-    navigator.clipboard.writeText(hex)
-    setCopiedColor(hex)
-    setTimeout(() => setCopiedColor(null), 1500)
-  }, [])
+
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto px-4 py-8">
@@ -136,18 +132,19 @@ export default function ColorPalette() {
                 <h3 className="text-xs font-medium text-stone-400 mb-4">Dominant Colors</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {palette.map((s, i) => (
-                    <motion.button key={s.hex} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-                      onClick={() => copyHex(s.hex)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                      className="text-left rounded-xl overflow-hidden border border-stone-700 hover:border-white/20 transition-all">
+                    <motion.div key={s.hex} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
+                      className="text-left rounded-xl overflow-hidden border border-stone-700 hover:border-white/20 transition-all group">
                       <div className="h-16" style={{ background: s.hex }} />
-                      <div className="p-2.5 bg-stone-800/80">
-                        <p className="text-sm font-mono text-white">{s.hex.toUpperCase()}</p>
-                        <p className="text-[10px] text-stone-400 flex items-center gap-1">
-                          <Droplets className="w-2.5 h-2.5" />{s.pct}%
-                          {copiedColor === s.hex && <span className="text-emerald-400 ml-1">Copied!</span>}
-                        </p>
+                      <div className="p-2.5 bg-stone-800/80 flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-mono text-white">{s.hex.toUpperCase()}</p>
+                          <p className="text-[10px] text-stone-400 flex items-center gap-1">
+                            <Droplets className="w-2.5 h-2.5" />{s.pct}%
+                          </p>
+                        </div>
+                        <CopyButton text={s.hex} />
                       </div>
-                    </motion.button>
+                    </motion.div>
                   ))}
                 </div>
               </motion.div>

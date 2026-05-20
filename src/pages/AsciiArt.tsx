@@ -2,7 +2,8 @@ import { useState, useCallback, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import DropZone from '../components/DropZone'
 import { useToast } from '../components/Toast'
-import { Monitor, Download, Copy, Check, ClipboardPaste, SlidersHorizontal } from 'lucide-react'
+import CopyButton from '../components/CopyButton'
+import { Monitor, Download, ClipboardPaste, SlidersHorizontal } from 'lucide-react'
 
 const CHARS = ['@', '#', 'S', '%', '?', '*', '+', ';', ':', ',', '.', ' ']
 const CHARS2 = ['█', '▓', '▒', '░', ' ']
@@ -12,7 +13,7 @@ export default function AsciiArt() {
   const [ascii, setAscii] = useState('')
   const [width, setWidth] = useState(80)
   const [inverted, setInverted] = useState(false)
-  const [copied, setCopied] = useState(false)
+
   const { toast } = useToast()
 
   const handleFiles = useCallback((files: File[]) => {
@@ -61,11 +62,7 @@ export default function AsciiArt() {
     return () => document.removeEventListener('paste', handlePaste)
   }, [handleFiles, toast])
 
-  const copyAscii = useCallback(() => {
-    navigator.clipboard.writeText(ascii)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1500)
-  }, [ascii])
+
 
   const downloadAscii = useCallback(() => {
     const blob = new Blob([ascii], { type: 'text/plain' })
@@ -125,10 +122,7 @@ export default function AsciiArt() {
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-xs font-medium text-stone-400">ASCII Art</h3>
                 <div className="flex gap-2">
-                  <motion.button onClick={copyAscii} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-700 text-xs text-stone-300">
-                    {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}{copied ? 'Copied' : 'Copy'}
-                  </motion.button>
+                  <CopyButton text={ascii} label="Copy" />
                   <motion.button onClick={downloadAscii} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium">
                     <Download className="w-3 h-3" />Download

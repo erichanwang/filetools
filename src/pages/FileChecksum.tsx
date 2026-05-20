@@ -2,7 +2,8 @@ import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import DropZone from '../components/DropZone'
 import { useToast } from '../components/Toast'
-import { Hash, Copy, Check, ClipboardPaste, Shield } from 'lucide-react'
+import CopyButton from '../components/CopyButton'
+import { Hash, ClipboardPaste, Shield } from 'lucide-react'
 
 type Algo = 'SHA-256' | 'SHA-384' | 'SHA-512' | 'MD5'
 
@@ -14,7 +15,6 @@ export default function FileChecksum() {
   const [results, setResults] = useState<{ name: string; hash: string; algo: Algo }[]>([])
   const [algo, setAlgo] = useState<Algo>('SHA-256')
   const [processing, setProcessing] = useState(false)
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
   const { toast } = useToast()
 
   const handleFiles = useCallback((newFiles: File[]) => {
@@ -47,11 +47,7 @@ export default function FileChecksum() {
     toast(`Computed ${algo} for ${res.length} file${res.length > 1 ? 's' : ''}`)
   }, [files, algo, toast])
 
-  const copyHash = useCallback((hash: string, i: number) => {
-    navigator.clipboard.writeText(hash)
-    setCopiedIndex(i)
-    setTimeout(() => setCopiedIndex(null), 1500)
-  }, [])
+
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto px-4 py-8">
@@ -108,10 +104,7 @@ export default function FileChecksum() {
                   className="bg-stone-800/50 rounded-xl p-4 group">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-stone-300 truncate">{r.name}</span>
-                    <motion.button onClick={() => copyHash(r.hash, i)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                      className="p-1.5 rounded-lg bg-stone-700 hover:bg-stone-600 text-stone-400 hover:text-white transition-colors">
-                      {copiedIndex === i ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    </motion.button>
+                    <CopyButton text={r.hash} className="p-1.5" />
                   </div>
                   <p className="text-xs font-mono text-stone-400 break-all">{r.hash}</p>
                 </motion.div>
