@@ -1,65 +1,77 @@
+import { Suspense, lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import { ToastProvider } from './components/Toast'
+import { ThemeProvider } from './components/ThemeContext'
+import ErrorBoundary from './components/ErrorBoundary'
+import { PageSkeleton } from './components/Skeleton'
 import Home from './pages/Home'
-import FileConverter from './pages/FileConverter'
-import BackgroundRemover from './pages/BackgroundRemover'
-import ImageCompressor from './pages/ImageCompressor'
-import ImageFilters from './pages/ImageFilters'
-import PdfOperations from './pages/PdfOperations'
-import OcrPage from './pages/OcrPage'
-import MetadataViewer from './pages/MetadataViewer'
-import BatchRename from './pages/BatchRename'
-import ImageCropper from './pages/ImageCropper'
-import ImageToPdf from './pages/ImageToPdf'
-import QrGenerator from './pages/QrGenerator'
-import ColorPalette from './pages/ColorPalette'
-import ExifTool from './pages/ExifTool'
-import FileChecksum from './pages/FileChecksum'
-import Base64Tool from './pages/Base64Tool'
-import AsciiArt from './pages/AsciiArt'
-import JsonTool from './pages/JsonTool'
-import CsvViewer from './pages/CsvViewer'
-import TextTools from './pages/TextTools'
-import PasswordGenerator from './pages/PasswordGenerator'
-import ColorConverter from './pages/ColorConverter'
-import JwtDecoder from './pages/JwtDecoder'
-import UnitConverter from './pages/UnitConverter'
+
+const FileConverter = lazy(() => import('./pages/FileConverter'))
+const BackgroundRemover = lazy(() => import('./pages/BackgroundRemover'))
+const ImageCompressor = lazy(() => import('./pages/ImageCompressor'))
+const ImageFilters = lazy(() => import('./pages/ImageFilters'))
+const PdfOperations = lazy(() => import('./pages/PdfOperations'))
+const OcrPage = lazy(() => import('./pages/OcrPage'))
+const MetadataViewer = lazy(() => import('./pages/MetadataViewer'))
+const BatchRename = lazy(() => import('./pages/BatchRename'))
+const ImageCropper = lazy(() => import('./pages/ImageCropper'))
+const ImageToPdf = lazy(() => import('./pages/ImageToPdf'))
+const QrGenerator = lazy(() => import('./pages/QrGenerator'))
+const ColorPalette = lazy(() => import('./pages/ColorPalette'))
+const ExifTool = lazy(() => import('./pages/ExifTool'))
+const FileChecksum = lazy(() => import('./pages/FileChecksum'))
+const Base64Tool = lazy(() => import('./pages/Base64Tool'))
+const AsciiArt = lazy(() => import('./pages/AsciiArt'))
+const JsonTool = lazy(() => import('./pages/JsonTool'))
+const CsvViewer = lazy(() => import('./pages/CsvViewer'))
+const TextTools = lazy(() => import('./pages/TextTools'))
+const PasswordGenerator = lazy(() => import('./pages/PasswordGenerator'))
+const ColorConverter = lazy(() => import('./pages/ColorConverter'))
+const JwtDecoder = lazy(() => import('./pages/JwtDecoder'))
+const UnitConverter = lazy(() => import('./pages/UnitConverter'))
+const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 
 export default function App() {
   return (
-    <ToastProvider>
-      <Routes>
-        <Route element={<Layout />}>
-          <Route index element={<Home />} />
-          {/* Image tools */}
-          <Route path="file-converter" element={<FileConverter />} />
-          <Route path="background-remover" element={<BackgroundRemover />} />
-          <Route path="image-compressor" element={<ImageCompressor />} />
-          <Route path="image-filters" element={<ImageFilters />} />
-          <Route path="image-cropper" element={<ImageCropper />} />
-          <Route path="image-to-pdf" element={<ImageToPdf />} />
-          <Route path="qr-generator" element={<QrGenerator />} />
-          <Route path="color-palette" element={<ColorPalette />} />
-          <Route path="ascii-art" element={<AsciiArt />} />
-          {/* Document tools */}
-          <Route path="pdf-operations" element={<PdfOperations />} />
-          <Route path="ocr" element={<OcrPage />} />
-          <Route path="metadata-viewer" element={<MetadataViewer />} />
-          <Route path="batch-rename" element={<BatchRename />} />
-          <Route path="exif-tool" element={<ExifTool />} />
-          <Route path="file-checksum" element={<FileChecksum />} />
-          <Route path="base64" element={<Base64Tool />} />
-          {/* Data tools */}
-          <Route path="json-tool" element={<JsonTool />} />
-          <Route path="csv-viewer" element={<CsvViewer />} />
-          <Route path="jwt-decoder" element={<JwtDecoder />} />
-          <Route path="color-converter" element={<ColorConverter />} />
-          <Route path="unit-converter" element={<UnitConverter />} />
-          <Route path="password-generator" element={<PasswordGenerator />} />
-          <Route path="text-tools" element={<TextTools />} />
-        </Route>
-      </Routes>
-    </ToastProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <ToastProvider>
+          <Routes>
+            <Route element={<Layout />}>
+              <Route index element={<Home />} />
+              {/* Image tools */}
+              <Route path="file-converter" element={<Suspense fallback={<PageSkeleton />}><FileConverter /></Suspense>} />
+              <Route path="background-remover" element={<Suspense fallback={<PageSkeleton />}><BackgroundRemover /></Suspense>} />
+              <Route path="image-compressor" element={<Suspense fallback={<PageSkeleton />}><ImageCompressor /></Suspense>} />
+              <Route path="image-filters" element={<Suspense fallback={<PageSkeleton />}><ImageFilters /></Suspense>} />
+              <Route path="image-cropper" element={<Suspense fallback={<PageSkeleton />}><ImageCropper /></Suspense>} />
+              <Route path="image-to-pdf" element={<Suspense fallback={<PageSkeleton />}><ImageToPdf /></Suspense>} />
+              <Route path="qr-generator" element={<Suspense fallback={<PageSkeleton />}><QrGenerator /></Suspense>} />
+              <Route path="color-palette" element={<Suspense fallback={<PageSkeleton />}><ColorPalette /></Suspense>} />
+              <Route path="ascii-art" element={<Suspense fallback={<PageSkeleton />}><AsciiArt /></Suspense>} />
+              {/* Document tools */}
+              <Route path="pdf-operations" element={<Suspense fallback={<PageSkeleton />}><PdfOperations /></Suspense>} />
+              <Route path="ocr" element={<Suspense fallback={<PageSkeleton />}><OcrPage /></Suspense>} />
+              <Route path="metadata-viewer" element={<Suspense fallback={<PageSkeleton />}><MetadataViewer /></Suspense>} />
+              <Route path="batch-rename" element={<Suspense fallback={<PageSkeleton />}><BatchRename /></Suspense>} />
+              <Route path="exif-tool" element={<Suspense fallback={<PageSkeleton />}><ExifTool /></Suspense>} />
+              <Route path="file-checksum" element={<Suspense fallback={<PageSkeleton />}><FileChecksum /></Suspense>} />
+              <Route path="base64" element={<Suspense fallback={<PageSkeleton />}><Base64Tool /></Suspense>} />
+              {/* Data tools */}
+              <Route path="json-tool" element={<Suspense fallback={<PageSkeleton />}><JsonTool /></Suspense>} />
+              <Route path="csv-viewer" element={<Suspense fallback={<PageSkeleton />}><CsvViewer /></Suspense>} />
+              <Route path="jwt-decoder" element={<Suspense fallback={<PageSkeleton />}><JwtDecoder /></Suspense>} />
+              <Route path="color-converter" element={<Suspense fallback={<PageSkeleton />}><ColorConverter /></Suspense>} />
+              <Route path="unit-converter" element={<Suspense fallback={<PageSkeleton />}><UnitConverter /></Suspense>} />
+              <Route path="password-generator" element={<Suspense fallback={<PageSkeleton />}><PasswordGenerator /></Suspense>} />
+              <Route path="text-tools" element={<Suspense fallback={<PageSkeleton />}><TextTools /></Suspense>} />
+              {/* Settings */}
+              <Route path="settings" element={<Suspense fallback={<PageSkeleton />}><SettingsPage /></Suspense>} />
+            </Route>
+          </Routes>
+        </ToastProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   )
 }

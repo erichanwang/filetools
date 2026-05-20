@@ -2,14 +2,17 @@ import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Menu, X, ChevronLeft, ChevronRight,
+  Menu, X, ChevronLeft, ChevronRight, Search,
   Home, Shuffle, Eraser, Zap, Palette, FileText,
   FileType, Eye, Pencil, FileImage, FileJson, QrCode,
   SwatchBook, Camera, Fingerprint, Code, Table,
   Shield, Keyboard, Type, ArrowLeftRight,
-  Crop, Layout as LayoutIcon
+  Crop, Layout as LayoutIcon, Settings, Sun, Moon
 } from 'lucide-react'
 import AnimatedBackground from './AnimatedBackground'
+import CommandPalette from './CommandPalette'
+import Breadcrumbs from './Breadcrumbs'
+import { useTheme } from './ThemeContext'
 
 const navGroups = [
   {
@@ -61,6 +64,7 @@ export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const location = useLocation()
+  const { resolved, setTheme } = useTheme()
 
   useEffect(() => {
     setMobileOpen(false)
@@ -102,13 +106,16 @@ export default function Layout() {
         )}
       </AnimatePresence>
 
+      {/* Command palette */}
+      <CommandPalette />
+
       {/* Sidebar */}
       <AnimatePresence>
         <motion.aside
           animate={{ width: mobileOpen ? 288 : collapsed ? 72 : 256, x: mobileOpen ? 0 : 0 }}
           className={`fixed left-0 top-0 h-full z-40 bg-[#0c0a09]/95 border-r border-white/5 backdrop-blur-xl
             flex flex-col py-4 overflow-hidden transition-[width]
-            ${mobileOpen ? 'transtone-x-0' : '-transtone-x-full lg:transtone-x-0'}`}
+            ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
         >
           {/* Logo */}
           <div className="px-4 mb-6 flex items-center justify-between shrink-0">
@@ -178,6 +185,23 @@ export default function Layout() {
             ))}
           </nav>
 
+          {/* Settings link */}
+          <div className="px-2 mt-auto">
+            <NavLink
+              to="/settings"
+              className={({ isActive }) =>
+                `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all shrink-0 ${
+                  isActive
+                    ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
+                    : 'text-white/40 hover:text-white/70 hover:bg-white/5 border border-transparent'
+                }`
+              }
+            >
+              <Settings className="w-4 h-4 shrink-0" />
+              {!collapsed && <span>Settings</span>}
+            </NavLink>
+          </div>
+
           {/* Footer */}
           {!collapsed && (
             <div className="px-4 pt-4 border-t border-white/5 shrink-0">
@@ -195,6 +219,37 @@ export default function Layout() {
           collapsed ? 'lg:ml-[72px]' : 'lg:ml-[256px]'
         }`}
       >
+        {/* Top bar */}
+        <div className="flex items-center justify-between mb-4 gap-3">
+          <div className="flex-1">
+            <Breadcrumbs />
+          </div>
+          <div className="flex items-center gap-2">
+            {/* Search trigger */}
+            <button
+              onClick={() => {
+                const e = new KeyboardEvent('keydown', { metaKey: true, key: 'k', bubbles: true })
+                document.dispatchEvent(e)
+              }}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white/20 text-xs hover:text-white/40 hover:bg-white/10 transition-all"
+              aria-label="Search tools (⌘K)"
+            >
+              <Search className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Search</span>
+              <kbd className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded font-mono text-white/10">⌘K</kbd>
+            </button>
+            {/* Theme toggle */}
+            <button
+              onClick={() => setTheme(resolved === 'dark' ? 'light' : 'dark')}
+              className="p-2 rounded-lg bg-white/5 border border-white/10 text-white/30 hover:text-white/50 hover:bg-white/10 transition-all"
+              title={`Switch to ${resolved === 'dark' ? 'light' : 'dark'} mode`}
+              aria-label={`Switch to ${resolved === 'dark' ? 'light' : 'dark'} mode`}
+            >
+              {resolved === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
