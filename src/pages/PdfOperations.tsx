@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import DropZone from '../components/DropZone'
+import { useToast } from '../components/Toast'
 import {
   FileText, Download, X, Combine, Scissors, FileArchive, Loader2,
   CheckCircle2, GripVertical
@@ -7,8 +9,12 @@ import {
 import { PDFDocument } from 'pdf-lib'
 
 type PdfMode = 'merge' | 'split' | 'compress'
-
 type PdfResult = { name: string; blob: Blob; originalSize?: number }
+
+const listItem = {
+  hidden: { opacity: 0, x: -10 },
+  show: { opacity: 1, x: 0 },
+}
 
 export default function PdfOperations() {
   const [mode, setMode] = useState<PdfMode>('merge')
@@ -16,6 +22,7 @@ export default function PdfOperations() {
   const [processing, setProcessing] = useState(false)
   const [results, setResults] = useState<PdfResult[]>([])
   const [splitRange, setSplitRange] = useState('')
+  const { toast } = useToast()
 
   const handleFiles = useCallback((newFiles: File[]) => {
     setFiles((prev) => [...prev, ...newFiles])
@@ -42,12 +49,14 @@ export default function PdfOperations() {
       }
       const pdfBytes = await mergedPdf.save()
       setResults([{ name: 'merged.pdf', blob: new Blob([pdfBytes as unknown as BlobPart], { type: 'application/pdf' }) }])
+      toast(`Merged ${files.length} PDFs successfully`)
     } catch (err) {
+      toast('Failed to merge PDFs', 'error')
       console.error(err)
     } finally {
       setProcessing(false)
     }
-  }, [files])
+  }, [files, toast])
 
   const split = useCallback(async () => {
     if (!files.length) return
@@ -82,12 +91,14 @@ export default function PdfOperations() {
       pages.forEach((page) => newPdf.addPage(page))
       const pdfBytes = await newPdf.save()
       setResults([{ name: 'split.pdf', blob: new Blob([pdfBytes as unknown as BlobPart], { type: 'application/pdf' }) }])
+      toast(`Split PDF — extracted ${pagesToExtract.length} page${pagesToExtract.length > 1 ? 's' : ''}`)
     } catch (err) {
+      toast('Failed to split PDF', 'error')
       console.error(err)
     } finally {
       setProcessing(false)
     }
-  }, [files, splitRange])
+  }, [files, splitRange, toast])
 
   const compress = useCallback(async () => {
     if (!files.length) return
@@ -108,12 +119,15 @@ export default function PdfOperations() {
         })
       }
       setResults(compressedResults)
+      const totalSaved = compressedResults.reduce((a, r) => a + (r.originalSize || 0) - r.blob.size, 0)
+      toast(`Compressed ${compressedResults.length} PDF${compressedResults.length > 1 ? 's' : ''} — saved ${(totalSaved / 1024).toFixed(1)} KB`)
     } catch (err) {
+      toast('Failed to compress PDF', 'error')
       console.error(err)
     } finally {
       setProcessing(false)
     }
-  }, [files])
+  }, [files, toast])
 
   const process = useCallback(() => {
     if (mode === 'merge') merge()
@@ -137,145 +151,206 @@ export default function PdfOperations() {
   const sortedFiles = [...files].sort((a, b) => a.name.localeCompare(b.name))
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 animate-fade-in-up">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="max-w-4xl mx-auto px-4 py-8"
+    >
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
+          <motion.div
+            whileHover={{ rotate: 10 }}
+            className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center"
+          >
             <FileText className="w-5 h-5 text-red-400" />
-          </div>
+          </motion.div>
           <h1 className="text-2xl font-bold text-white">PDF Tools</h1>
         </div>
-        <p className="text-sm text-slate-400 ml-13">
+        <p className="text-sm text-stone-400 ml-13">
           Merge, split, and compress PDFs — all in your browser.
         </p>
       </div>
 
       {/* Mode selector */}
-      <div className="glass rounded-2xl p-1.5 mb-6 inline-flex gap-1">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="glass rounded-2xl p-1.5 mb-6 inline-flex gap-1"
+      >
         {([
           { key: 'merge' as const, icon: Combine, label: 'Merge' },
           { key: 'split' as const, icon: Scissors, label: 'Split' },
           { key: 'compress' as const, icon: FileArchive, label: 'Compress' },
         ]).map((m) => (
-          <button
+          <motion.button
             key={m.key}
             onClick={() => { setMode(m.key); setFiles([]); setResults([]) }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
               mode === m.key
                 ? 'bg-red-600 text-white shadow-lg shadow-red-600/25'
-                : 'text-slate-400 hover:text-slate-200'
+                : 'text-stone-400 hover:text-stone-200'
             }`}
           >
             <m.icon className="w-4 h-4" />
             {m.label}
-          </button>
+          </motion.button>
         ))}
-      </div>
+      </motion.div>
 
       {/* Mode-specific UI */}
-      {mode === 'merge' && (
-        <div className="space-y-6">
-          <DropZone
-            onFiles={handleFiles}
-            accept=".pdf"
-            label="Drop PDF files to merge"
-            hint={`${files.length} file${files.length !== 1 ? 's' : ''} selected`}
-            className="mb-0"
-          />
-          {sortedFiles.length > 0 && (
-            <div className="glass rounded-2xl p-5">
-              <h3 className="text-xs font-medium text-slate-400 mb-3">Files (sorted by name)</h3>
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {sortedFiles.map((file, i) => (
-                  <div key={i} className="flex items-center justify-between bg-slate-800/50 rounded-xl px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <GripVertical className="w-4 h-4 text-slate-600" />
-                      <FileText className="w-4 h-4 text-red-400" />
-                      <span className="text-sm text-slate-300">{file.name}</span>
-                    </div>
-                    <button onClick={() => removeFile(files.indexOf(file))} className="p-1 hover:bg-slate-700 rounded-lg">
-                      <X className="w-4 h-4 text-slate-500" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      <AnimatePresence mode="wait">
+        {mode === 'merge' && (
+          <motion.div
+            key="merge"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="space-y-6"
+          >
+            <DropZone
+              onFiles={handleFiles}
+              accept=".pdf"
+              label="Drop PDF files to merge"
+              hint={`${files.length} file${files.length !== 1 ? 's' : ''} selected`}
+              className="mb-0"
+            />
+            {sortedFiles.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="glass rounded-2xl p-5"
+              >
+                <h3 className="text-xs font-medium text-stone-400 mb-3">Files (sorted by name)</h3>
+                <motion.div className="space-y-2 max-h-60 overflow-y-auto">
+                  {sortedFiles.map((file, i) => (
+                    <motion.div
+                      key={i}
+                      variants={listItem}
+                      initial="hidden"
+                      animate="show"
+                      transition={{ delay: i * 0.03 }}
+                      className="flex items-center justify-between bg-stone-800/50 rounded-xl px-4 py-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <GripVertical className="w-4 h-4 text-stone-600" />
+                        <FileText className="w-4 h-4 text-red-400" />
+                        <span className="text-sm text-stone-300">{file.name}</span>
+                      </div>
+                      <button onClick={() => removeFile(files.indexOf(file))} className="p-1 hover:bg-stone-700 rounded-lg">
+                        <X className="w-4 h-4 text-stone-500" />
+                      </button>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
 
-      {mode === 'split' && (
-        <div className="space-y-6">
-          <DropZone
-            onFiles={handleFiles}
-            accept=".pdf"
-            multiple={false}
-            label="Drop a PDF to split"
-            hint="Select one PDF file"
-            className="mb-0"
-          />
-          {files.length > 0 && (
-            <div className="glass rounded-2xl p-5 space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-2">
-                  Pages to extract (optional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. 1-3,5,7-10 (leave empty for all)"
-                  value={splitRange}
-                  onChange={(e) => setSplitRange(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-red-500 transition-colors"
-                />
-              </div>
-              <div className="flex items-center gap-3 bg-slate-800/50 rounded-xl px-4 py-3">
-                <FileText className="w-4 h-4 text-red-400" />
-                <span className="text-sm text-slate-300">{files[0].name}</span>
-                <button onClick={() => { setFiles([]); setResults([]) }} className="ml-auto p-1 hover:bg-slate-700 rounded-lg">
-                  <X className="w-4 h-4 text-slate-500" />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+        {mode === 'split' && (
+          <motion.div
+            key="split"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="space-y-6"
+          >
+            <DropZone
+              onFiles={handleFiles}
+              accept=".pdf"
+              multiple={false}
+              label="Drop a PDF to split"
+              hint="Select one PDF file"
+              className="mb-0"
+            />
+            {files.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="glass rounded-2xl p-5 space-y-4"
+              >
+                <div>
+                  <label className="block text-xs font-medium text-stone-400 mb-2">
+                    Pages to extract (optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 1-3,5,7-10 (leave empty for all)"
+                    value={splitRange}
+                    onChange={(e) => setSplitRange(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-stone-800 border border-stone-700 text-white text-sm placeholder-stone-500 focus:outline-none focus:border-red-500 transition-colors"
+                  />
+                </div>
+                <div className="flex items-center gap-3 bg-stone-800/50 rounded-xl px-4 py-3">
+                  <FileText className="w-4 h-4 text-red-400" />
+                  <span className="text-sm text-stone-300">{files[0].name}</span>
+                  <button onClick={() => { setFiles([]); setResults([]) }} className="ml-auto p-1 hover:bg-stone-700 rounded-lg">
+                    <X className="w-4 h-4 text-stone-500" />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
 
-      {mode === 'compress' && (
-        <div className="space-y-6">
-          <DropZone
-            onFiles={handleFiles}
-            accept=".pdf"
-            label="Drop PDFs to compress"
-            hint="Select one or more PDF files"
-            className="mb-0"
-          />
-          {files.length > 0 && (
-            <div className="glass rounded-2xl p-5">
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {files.map((file, i) => (
-                  <div key={i} className="flex items-center justify-between bg-slate-800/50 rounded-xl px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-4 h-4 text-red-400" />
-                      <span className="text-sm text-slate-300">{file.name}</span>
-                      <span className="text-xs text-slate-500">{(file.size / 1024).toFixed(1)} KB</span>
-                    </div>
-                    <button onClick={() => removeFile(i)} className="p-1 hover:bg-slate-700 rounded-lg">
-                      <X className="w-4 h-4 text-slate-500" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+        {mode === 'compress' && (
+          <motion.div
+            key="compress"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="space-y-6"
+          >
+            <DropZone
+              onFiles={handleFiles}
+              accept=".pdf"
+              label="Drop PDFs to compress"
+              hint="Select one or more PDF files"
+              className="mb-0"
+            />
+            {files.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="glass rounded-2xl p-5"
+              >
+                <motion.div className="space-y-2 max-h-60 overflow-y-auto">
+                  {files.map((file, i) => (
+                    <motion.div
+                      key={i}
+                      variants={listItem}
+                      initial="hidden"
+                      animate="show"
+                      transition={{ delay: i * 0.03 }}
+                      className="flex items-center justify-between bg-stone-800/50 rounded-xl px-4 py-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-4 h-4 text-red-400" />
+                        <span className="text-sm text-stone-300">{file.name}</span>
+                        <span className="text-xs text-stone-500">{(file.size / 1024).toFixed(1)} KB</span>
+                      </div>
+                      <button onClick={() => removeFile(i)} className="p-1 hover:bg-stone-700 rounded-lg">
+                        <X className="w-4 h-4 text-stone-500" />
+                      </button>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Process button */}
       {files.length > 0 && (
-        <button
+        <motion.button
           onClick={process}
           disabled={processing || (mode === 'merge' && files.length < 2)}
-          className="mt-6 w-full py-3 rounded-xl bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2"
+          whileHover={{ scale: processing ? 1 : 1.01 }}
+          whileTap={{ scale: processing ? 1 : 0.99 }}
+          className="mt-6 w-full py-3 rounded-xl bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-red-600/20"
         >
           {processing ? (
             <>
@@ -298,56 +373,74 @@ export default function PdfOperations() {
               Compress {files.length} PDF{files.length > 1 ? 's' : ''}
             </>
           )}
-        </button>
+        </motion.button>
       )}
 
       {/* Results */}
-      {results.length > 0 && (
-        <div className="glass rounded-2xl p-5 mt-6 animate-fade-in-up">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-sm font-semibold text-white">
-                {results.length} file{results.length > 1 ? 's' : ''} processed
-              </h3>
-            </div>
-            {results.length > 1 && (
-              <button
-                onClick={downloadAll}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-all duration-200"
-              >
-                <Download className="w-4 h-4" />
-                Download all
-              </button>
-            )}
-          </div>
-          <div className="space-y-2">
-            {results.map((r, i) => (
-              <div key={i} className="flex items-center justify-between bg-slate-800/50 rounded-xl px-4 py-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-sm text-slate-300 truncate">{r.name}</p>
-                    <p className="text-xs text-slate-500">
-                      {(r.blob.size / 1024).toFixed(1)} KB
-                      {r.originalSize && (
-                        <span className="text-emerald-400 ml-2">
-                          (was {(r.originalSize / 1024).toFixed(1)} KB)
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => downloadOne(r)}
-                  className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-                >
-                  <Download className="w-4 h-4 text-blue-400" />
-                </button>
+      <AnimatePresence>
+        {results.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="glass rounded-2xl p-5 mt-6"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-semibold text-white">
+                  {results.length} file{results.length > 1 ? 's' : ''} processed
+                </h3>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+              {results.length > 1 && (
+                <motion.button
+                  onClick={downloadAll}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-all duration-200 shadow-lg shadow-emerald-600/20"
+                >
+                  <Download className="w-4 h-4" />
+                  Download all
+                </motion.button>
+              )}
+            </div>
+            <motion.div className="space-y-2">
+              {results.map((r, i) => (
+                <motion.div
+                  key={i}
+                  variants={listItem}
+                  initial="hidden"
+                  animate="show"
+                  transition={{ delay: i * 0.04 }}
+                  className="flex items-center justify-between bg-stone-800/50 rounded-xl px-4 py-3 group"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm text-stone-300 truncate">{r.name}</p>
+                      <p className="text-xs text-stone-500">
+                        {(r.blob.size / 1024).toFixed(1)} KB
+                        {r.originalSize && (
+                          <span className="text-emerald-400 ml-2">
+                            (was {(r.originalSize / 1024).toFixed(1)} KB)
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <motion.button
+                    onClick={() => downloadOne(r)}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="p-2 hover:bg-stone-700 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                  >
+                    <Download className="w-4 h-4 text-amber-400" />
+                  </motion.button>
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   )
 }

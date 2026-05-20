@@ -1,6 +1,8 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import DropZone from '../components/DropZone'
-import { SlidersHorizontal, Download, RefreshCw, Undo2, Contrast, Sun, Droplets, Sparkles } from 'lucide-react'
+import { useToast } from '../components/Toast'
+import { SlidersHorizontal, Download, RefreshCw, Undo2, Contrast, Sun, Droplets, Sparkles, ClipboardPaste } from 'lucide-react'
 
 interface FilterSettings {
   brightness: number
@@ -14,14 +16,8 @@ interface FilterSettings {
 }
 
 const defaults: FilterSettings = {
-  brightness: 100,
-  contrast: 100,
-  saturation: 100,
-  blur: 0,
-  grayscale: 0,
-  sepia: 0,
-  hueRotate: 0,
-  opacity: 100,
+  brightness: 100, contrast: 100, saturation: 100, blur: 0,
+  grayscale: 0, sepia: 0, hueRotate: 0, opacity: 100,
 }
 
 const filters = [
@@ -50,6 +46,7 @@ export default function ImageFilters() {
   const [source, setSource] = useState<{ file: File; url: string } | null>(null)
   const [settings, setSettings] = useState<FilterSettings>({ ...defaults })
   const imgRef = useRef<HTMLImageElement>(null)
+  const { toast } = useToast()
 
   const handleFiles = useCallback((files: File[]) => {
     if (files.length) {
@@ -58,6 +55,29 @@ export default function ImageFilters() {
       setSettings({ ...defaults })
     }
   }, [source])
+
+  // Clipboard paste support
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items
+      if (!items) return
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i]
+        if (item.type.startsWith('image/')) {
+          e.preventDefault()
+          const blob = item.getAsFile()
+          if (blob) {
+            const file = new File([blob], `pasted-image.${blob.type.split('/')[1] || 'png'}`, { type: blob.type })
+            handleFiles([file])
+            toast('Image pasted from clipboard')
+          }
+          break
+        }
+      }
+    }
+    document.addEventListener('paste', handlePaste)
+    return () => document.removeEventListener('paste', handlePaste)
+  }, [handleFiles, toast])
 
   const set = useCallback((key: keyof FilterSettings, value: number) => {
     setSettings((prev) => ({ ...prev, [key]: value }))
@@ -89,8 +109,9 @@ export default function ImageFilters() {
       a.download = source.file.name.replace(/\.[^.]+$/, '_filtered.png')
       a.click()
       URL.revokeObjectURL(url)
+      toast('Filtered image downloaded')
     }, 'image/png')
-  }, [source, filterStyle])
+  }, [source, filterStyle, toast])
 
   const clearSource = useCallback(() => {
     if (source) URL.revokeObjectURL(source.url)
@@ -99,119 +120,165 @@ export default function ImageFilters() {
   }, [source])
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 animate-fade-in-up">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="max-w-4xl mx-auto px-4 py-8"
+    >
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
+          <motion.div
+            whileHover={{ rotate: 180 }}
+            transition={{ duration: 0.5 }}
+            className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center"
+          >
             <SlidersHorizontal className="w-5 h-5 text-orange-400" />
-          </div>
+          </motion.div>
           <h1 className="text-2xl font-bold text-white">Image Filters</h1>
         </div>
-        <p className="text-sm text-slate-400 ml-13">
-          Adjust brightness, contrast, saturation, and more. Apply creative presets.
+        <p className="text-sm text-stone-400 ml-13">
+          Adjust brightness, contrast, saturation, and more. Apply creative presets. Paste images from clipboard.
         </p>
       </div>
 
-      {!source ? (
-        <DropZone
-          onFiles={handleFiles}
-          accept="image/*"
-          multiple={false}
-          label="Drop an image to edit"
-          hint="PNG, JPEG, WebP"
-          className="mb-6"
-        />
-      ) : (
-        <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            {/* Preview */}
-            <div className="glass rounded-2xl p-4">
-              <h3 className="text-xs font-medium text-slate-400 mb-3">Preview</h3>
-              <div className="aspect-square rounded-xl overflow-hidden bg-slate-900/50 flex items-center justify-center relative">
-                <img
-                  ref={imgRef}
-                  src={source.url}
-                  alt="Preview"
-                  className="max-w-full max-h-full object-contain transition-all duration-300"
-                  style={{ filter: filterStyle }}
-                />
-              </div>
-            </div>
+      <AnimatePresence mode="wait">
+        {!source ? (
+          <motion.div
+            key="dropzone"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+          >
+            <DropZone
+              onFiles={handleFiles}
+              accept="image/*"
+              multiple={false}
+              label="Drop an image to edit"
+              hint="PNG, JPEG, WebP — or Ctrl+V to paste"
+              className="mb-6"
+            />
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="flex items-center justify-center gap-2 text-xs text-stone-600 -mt-3 mb-6"
+            >
+              <ClipboardPaste className="w-3.5 h-3.5" />
+              <span>Or press <kbd className="px-1.5 py-0.5 rounded bg-stone-800 border border-stone-700 text-[10px]">Ctrl+V</kbd> to paste an image from clipboard</span>
+            </motion.div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="editor"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              <motion.div
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                className="glass rounded-2xl p-4"
+              >
+                <h3 className="text-xs font-medium text-stone-400 mb-3">Preview</h3>
+                <div className="aspect-square rounded-xl overflow-hidden bg-stone-900/50 flex items-center justify-center relative">
+                  <img
+                    ref={imgRef}
+                    src={source.url}
+                    alt="Preview"
+                    className="max-w-full max-h-full object-contain transition-all duration-300"
+                    style={{ filter: filterStyle }}
+                  />
+                </div>
+              </motion.div>
 
-            {/* Controls */}
-            <div className="glass rounded-2xl p-4 overflow-y-auto max-h-[600px]">
-              {/* Presets */}
-              <div className="mb-5">
-                <h3 className="text-xs font-medium text-slate-400 mb-3">Presets</h3>
-                <div className="flex flex-wrap gap-2">
-                  {presets.map((p) => (
-                    <button
-                      key={p.name}
-                      onClick={() => applyPreset(p)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all duration-200 border border-slate-700 hover:border-slate-600"
-                    >
-                      {p.name}
-                    </button>
+              <motion.div
+                initial={{ x: 20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.1 }}
+                className="glass rounded-2xl p-4 overflow-y-auto max-h-[600px]"
+              >
+                <div className="mb-5">
+                  <h3 className="text-xs font-medium text-stone-400 mb-3">Presets</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {presets.map((p) => (
+                      <motion.button
+                        key={p.name}
+                        onClick={() => applyPreset(p)}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white transition-all duration-200 border border-stone-700 hover:border-stone-600"
+                      >
+                        {p.name}
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+
+                <h3 className="text-xs font-medium text-stone-400 mb-3">Adjustments</h3>
+                <div className="space-y-4">
+                  {filters.map((f) => (
+                    <div key={f.key}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs text-stone-400 flex items-center gap-1.5">
+                          <f.icon className="w-3 h-3" />
+                          {f.label}
+                        </label>
+                        <span className="text-xs font-mono text-stone-500">
+                          {settings[f.key]}{f.unit}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min={f.min}
+                        max={f.max}
+                        value={settings[f.key]}
+                        onChange={(e) => set(f.key, Number(e.target.value))}
+                        className="w-full"
+                      />
+                    </div>
                   ))}
                 </div>
-              </div>
 
-              {/* Sliders */}
-              <h3 className="text-xs font-medium text-slate-400 mb-3">Adjustments</h3>
-              <div className="space-y-4">
-                {filters.map((f) => (
-                  <div key={f.key}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs text-slate-400 flex items-center gap-1.5">
-                        <f.icon className="w-3 h-3" />
-                        {f.label}
-                      </label>
-                      <span className="text-xs font-mono text-slate-500">
-                        {settings[f.key]}{f.unit}
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={f.min}
-                      max={f.max}
-                      value={settings[f.key]}
-                      onChange={(e) => set(f.key, Number(e.target.value))}
-                      className="w-full"
-                    />
-                  </div>
-                ))}
-              </div>
-
-              <button
-                onClick={reset}
-                className="mt-5 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium transition-all duration-200"
-              >
-                <Undo2 className="w-4 h-4" />
-                Reset all
-              </button>
+                <motion.button
+                  onClick={reset}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="mt-5 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 text-sm font-medium transition-all duration-200"
+                >
+                  <Undo2 className="w-4 h-4" />
+                  Reset all
+                </motion.button>
+              </motion.div>
             </div>
-          </div>
 
-          {/* Actions */}
-          <div className="glass rounded-2xl p-4 flex flex-wrap items-center gap-3">
-            <button
-              onClick={download}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium transition-all duration-200"
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass rounded-2xl p-4 flex flex-wrap items-center gap-3"
             >
-              <Download className="w-4 h-4" />
-              Download
-            </button>
-            <button
-              onClick={clearSource}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium transition-all duration-200"
-            >
-              <RefreshCw className="w-4 h-4" />
-              New Image
-            </button>
-          </div>
-        </>
-      )}
-
-    </div>
+              <motion.button
+                onClick={download}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium transition-all duration-200 shadow-lg shadow-emerald-600/20"
+              >
+                <Download className="w-4 h-4" />
+                Download
+              </motion.button>
+              <motion.button
+                onClick={clearSource}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 text-sm font-medium transition-all duration-200"
+              >
+                <RefreshCw className="w-4 h-4" />
+                New Image
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   )
 }

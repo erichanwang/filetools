@@ -1,4 +1,5 @@
-import { useState, useCallback, type DragEvent } from 'react'
+import { useState, useCallback, type DragEvent, type ReactNode } from 'react'
+import { motion } from 'framer-motion'
 import { Upload, File } from 'lucide-react'
 
 interface DropZoneProps {
@@ -7,7 +8,7 @@ interface DropZoneProps {
   multiple?: boolean
   label?: string
   hint?: string
-  icon?: React.ReactNode
+  icon?: ReactNode
   className?: string
 }
 
@@ -51,40 +52,64 @@ export default function DropZone({
   )
 
   return (
-    <div
+    <motion.div
+      whileHover={{ scale: 1.005 }}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={`
-        dropzone relative flex flex-col items-center justify-center gap-3
+        dropzone relative flex flex-col items-center justify-center gap-4
         p-10 border-2 border-dashed rounded-2xl cursor-pointer
-        transition-all duration-200 min-h-[200px]
-        ${isDragOver ? 'active border-blue-400 bg-blue-500/5' : 'border-slate-700 hover:border-slate-500'}
+        transition-all duration-300 min-h-[200px]
+        ${isDragOver
+          ? 'border-amber-400 bg-amber-500/5 scale-[1.01]'
+          : 'border-stone-700/50 hover:border-stone-500 bg-stone-900/20'
+        }
         ${className}
       `}
     >
+      {/* Pulsing border glow on drag */}
+      {isDragOver && (
+        <motion.div
+          className="absolute inset-0 rounded-2xl"
+          animate={{ boxShadow: ['0 0 0px rgba(217,119,6,0)', '0 0 30px rgba(217,119,6,0.15)', '0 0 0px rgba(217,119,6,0)'] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        />
+      )}
+
       <input
         type="file"
         accept={accept}
         multiple={multiple}
         onChange={handleChange}
-        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
       />
+
       {icon || (
-        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-200 ${isDragOver ? 'bg-blue-600/20' : 'bg-slate-800'}`}>
+        <motion.div
+          animate={isDragOver ? { scale: [1, 1.1, 1], y: [0, -4, 0] } : {}}
+          transition={{ duration: 1.5, repeat: Infinity }}
+          className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+            isDragOver ? 'bg-amber-600/20 shadow-lg shadow-amber-600/10' : 'bg-stone-800/50'
+          }`}
+        >
           {isDragOver ? (
-            <File className="w-7 h-7 text-blue-400" />
+            <File className="w-7 h-7 text-amber-400" />
           ) : (
-            <Upload className="w-7 h-7 text-slate-400" />
+            <Upload className="w-7 h-7 text-stone-500" />
           )}
-        </div>
+        </motion.div>
       )}
-      <div className="text-center">
-        <p className={`text-sm font-medium transition-colors ${isDragOver ? 'text-blue-400' : 'text-slate-300'}`}>
+
+      <div className="text-center relative z-0">
+        <motion.p
+          animate={isDragOver ? { color: '#fbbf24' } : { color: '#d6d3d1' }}
+          className="text-sm font-medium"
+        >
           {isDragOver ? 'Release to upload' : label}
-        </p>
-        <p className="text-xs text-slate-500 mt-1">{hint}</p>
+        </motion.p>
+        <p className="text-xs text-stone-500 mt-1.5">{hint}</p>
       </div>
-    </div>
+    </motion.div>
   )
 }
