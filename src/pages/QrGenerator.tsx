@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { toCanvas as qrToCanvas } from 'qrcode'
 import { useToast } from '../components/Toast'
-import { QrCode, Download, Copy, Type, Palette, RefreshCw } from 'lucide-react'
+import { QrCode, Download, Copy, Type, Palette, RefreshCw, FileImage } from 'lucide-react'
 
 export default function QrGenerator() {
   const [text, setText] = useState('')
@@ -39,6 +39,21 @@ export default function QrGenerator() {
     }, 'image/png')
   }, [toast])
 
+  const downloadSvg = useCallback(() => {
+    if (!canvasRef.current || !generated) return
+    // Convert canvas to base64 PNG and embed in SVG wrapper
+    const dataUrl = canvasRef.current.toDataURL('image/png')
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+  <image width="${size}" height="${size}" xlink:href="${dataUrl}"/>
+</svg>`
+    const blob = new Blob([svg], { type: 'image/svg+xml' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = 'qrcode.svg'; a.click()
+    URL.revokeObjectURL(url)
+    toast('SVG downloaded')
+  }, [canvasRef, generated, size, toast])
+
   const copyDataUrl = useCallback(() => {
     if (!canvasRef.current) return
     navigator.clipboard.writeText(canvasRef.current.toDataURL('image/png'))
@@ -54,7 +69,7 @@ export default function QrGenerator() {
           </motion.div>
           <h1 className="text-2xl font-bold text-white">QR Code Generator</h1>
         </div>
-        <p className="text-sm text-stone-400 ml-13">Generate customizable QR codes from text, URLs, or any data.</p>
+        <p className="text-sm text-stone-400 ml-13">Generate customizable QR codes. Download as PNG or SVG. Copy as data URL.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -101,10 +116,14 @@ export default function QrGenerator() {
             </div>
           )}
           {generated && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-2">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-2 flex-wrap justify-center">
               <motion.button onClick={download} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-medium">
                 <Download className="w-3.5 h-3.5" />PNG
+              </motion.button>
+              <motion.button onClick={downloadSvg} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-medium">
+                <FileImage className="w-3.5 h-3.5" />SVG
               </motion.button>
               <motion.button onClick={copyDataUrl} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-stone-700 text-stone-300 text-xs font-medium">

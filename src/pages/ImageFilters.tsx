@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import DropZone from '../components/DropZone'
 import { useToast } from '../components/Toast'
-import { SlidersHorizontal, Download, RefreshCw, Undo2, Contrast, Sun, Droplets, Sparkles, ClipboardPaste } from 'lucide-react'
+import { SlidersHorizontal, Download, RefreshCw, Undo2, Contrast, Sun, Droplets, Sparkles, ClipboardPaste, Columns } from 'lucide-react'
 
 interface FilterSettings {
   brightness: number
@@ -45,6 +45,7 @@ const presets = [
 export default function ImageFilters() {
   const [source, setSource] = useState<{ file: File; url: string } | null>(null)
   const [settings, setSettings] = useState<FilterSettings>({ ...defaults })
+  const [showOriginal, setShowOriginal] = useState(false)
   const imgRef = useRef<HTMLImageElement>(null)
   const { toast } = useToast()
 
@@ -181,14 +182,25 @@ export default function ImageFilters() {
                 className="glass rounded-2xl p-4"
               >
                 <h3 className="text-xs font-medium text-stone-400 mb-3">Preview</h3>
-                <div className="aspect-square rounded-xl overflow-hidden bg-stone-900/50 flex items-center justify-center relative">
+                <div className="aspect-square rounded-xl overflow-hidden bg-stone-900/50 flex items-center justify-center relative group">
                   <img
                     ref={imgRef}
                     src={source.url}
                     alt="Preview"
                     className="max-w-full max-h-full object-contain transition-all duration-300"
-                    style={{ filter: filterStyle }}
+                    style={{ filter: showOriginal ? 'none' : filterStyle }}
                   />
+                  <button
+                    onMouseDown={() => setShowOriginal(true)}
+                    onMouseUp={() => setShowOriginal(false)}
+                    onMouseLeave={() => setShowOriginal(false)}
+                    onTouchStart={() => setShowOriginal(true)}
+                    onTouchEnd={() => setShowOriginal(false)}
+                    className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-900/80 border border-stone-700/50 text-xs text-stone-400 hover:text-stone-200 transition-colors backdrop-blur-sm"
+                  >
+                    <Columns className="w-3.5 h-3.5" />
+                    {showOriginal ? 'Original' : 'Hold to compare'}
+                  </button>
                 </div>
               </motion.div>
 

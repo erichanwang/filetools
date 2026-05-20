@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import DropZone from '../components/DropZone'
 import { useToast } from '../components/Toast'
-import { Shrink, Download, X, Image, Loader2, Maximize2, FileImage, ClipboardPaste } from 'lucide-react'
+import { Shrink, Download, X, Image, Loader2, Maximize2, FileImage, ClipboardPaste, FileType } from 'lucide-react'
 
 const listItem = {
   hidden: { opacity: 0, x: -10 },
@@ -14,6 +14,7 @@ export default function ImageCompressor() {
   const [quality, setQuality] = useState(80)
   const [maxWidth, setMaxWidth] = useState(16384)
   const [maxHeight, setMaxHeight] = useState(16384)
+  const [format, setFormat] = useState<'image/jpeg' | 'image/png' | 'image/webp'>('image/jpeg')
   const [processing, setProcessing] = useState(false)
   const [results, setResults] = useState<{ name: string; originalSize: number; compressedSize: number; url: string }[]>([])
   const { toast } = useToast()
@@ -87,11 +88,12 @@ export default function ImageCompressor() {
         ctx.drawImage(img, 0, 0, w, h)
 
         const blob = await new Promise<Blob | null>((resolve) => {
-          canvas.toBlob(resolve, 'image/jpeg', quality / 100)
+          canvas.toBlob(resolve, format, quality / 100)
         })
 
         if (blob) {
-          const name = file.name.replace(/\.[^.]+$/, '_compressed.jpg')
+          const ext = format.split('/')[1] || 'jpg'
+          const name = file.name.replace(/\.[^.]+$/, `_compressed.${ext}`)
           resultsArr.push({
             name,
             originalSize: file.size,
@@ -109,7 +111,7 @@ export default function ImageCompressor() {
 
     const totalSaved = resultsArr.reduce((acc, r) => acc + (r.originalSize - r.compressedSize), 0)
     toast(`Compressed ${resultsArr.length} file${resultsArr.length > 1 ? 's' : ''} — saved ${(totalSaved / 1024).toFixed(1)} KB`)
-  }, [files, quality, maxWidth, maxHeight, toast])
+  }, [files, quality, maxWidth, maxHeight, format, toast])
 
   const downloadAll = useCallback(() => {
     results.forEach((r) => {
@@ -172,11 +174,23 @@ export default function ImageCompressor() {
           />
           <div className="flex justify-between text-[10px] text-stone-600 mt-1">
             <span>Smaller</span>
-            <span>Better</span>
+            <span>{format === 'image/png' ? 'N/A for PNG' : 'Better'}</span>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-stone-400 mb-2">
+              <FileType className="w-3 h-3 inline mr-1" />
+              Output Format
+            </label>
+            <select value={format} onChange={e => setFormat(e.target.value as typeof format)}
+              className="w-full px-4 py-2.5 rounded-xl bg-stone-800 border border-stone-700 text-white text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+              <option value="image/jpeg">JPEG — smaller, lossy</option>
+              <option value="image/png">PNG — lossless, larger</option>
+              <option value="image/webp">WebP — best compression</option>
+            </select>
+          </div>
           <div>
             <label className="block text-xs font-medium text-stone-400 mb-2">
               <Maximize2 className="w-3 h-3 inline mr-1" />

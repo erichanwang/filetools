@@ -3,16 +3,17 @@ import { motion } from 'framer-motion'
 import { useToast } from '../components/Toast'
 import {
   Type, CaseUpper, CaseLower, Eye, GitCompare, Copy, Trash2,
-  Hash, AlignLeft, ClipboardPaste, Undo2, Redo2
+  Hash, AlignLeft, ClipboardPaste, Undo2, Redo2, BarChart3
 } from 'lucide-react'
 
-type Tab = 'counter' | 'case' | 'markdown' | 'diff'
+type Tab = 'counter' | 'case' | 'markdown' | 'diff' | 'frequency'
 
 const tabs: { id: Tab; label: string; icon: typeof Type }[] = [
   { id: 'counter', label: 'Word Counter', icon: Hash },
   { id: 'case', label: 'Case Convert', icon: CaseUpper },
   { id: 'markdown', label: 'Markdown', icon: Eye },
   { id: 'diff', label: 'Text Diff', icon: GitCompare },
+  { id: 'frequency', label: 'Frequency', icon: BarChart3 },
 ]
 
 export default function TextTools() {
@@ -340,11 +341,53 @@ export default function TextTools() {
         </motion.div>
       )}
 
+      {activeTab === 'frequency' && text && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-4"
+        >
+          <h3 className="text-xs font-medium text-white/40 uppercase tracking-wider">Character Frequency</h3>
+          <CharFrequency text={text} />
+        </motion.div>
+      )}
+
       {/* Paste hint */}
       <div className="text-center text-xs text-white/20 flex items-center justify-center gap-1.5">
         <ClipboardPaste className="w-3 h-3" />
         Press Ctrl+V to paste text
       </div>
     </motion.div>
+  )
+}
+
+function CharFrequency({ text }: { text: string }) {
+  const freq: Record<string, number> = {}
+  let total = 0
+  for (const ch of text) {
+    if (ch.trim()) { freq[ch] = (freq[ch] || 0) + 1; total++ }
+  }
+  if (total === 0) return <p className="text-xs text-white/20">No characters to analyze</p>
+  const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 30)
+  const maxCount = sorted[0]?.[1] || 1
+  return (
+    <div className="space-y-1.5">
+      {sorted.map(([char, count]) => (
+        <div key={char} className="flex items-center gap-3">
+          <span className="w-8 text-right text-xs font-mono text-white/60">
+            {char === ' ' ? '␣' : char === '\n' ? '↵' : char}
+          </span>
+          <div className="flex-1 h-5 rounded bg-white/5 overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${(count / maxCount) * 100}%` }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
+              className="h-full rounded bg-amber-500/40"
+            />
+          </div>
+          <span className="w-12 text-right text-xs font-mono text-white/30">{count}</span>
+        </div>
+      ))}
+    </div>
   )
 }

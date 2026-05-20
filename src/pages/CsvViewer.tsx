@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import DropZone from '../components/DropZone'
 import { useToast } from '../components/Toast'
-import { Table, ClipboardPaste, FileText } from 'lucide-react'
+import { Table, ClipboardPaste, FileText, Search, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 
 interface CsvData { headers: string[]; rows: string[][] }
 
@@ -27,7 +27,27 @@ function parseCSV(text: string): CsvData {
 export default function CsvViewer() {
   const [data, setData] = useState<CsvData | null>(null)
   const [fileName, setFileName] = useState('')
+  const [search, setSearch] = useState('')
+  const [sortCol, setSortCol] = useState<number | null>(null)
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const { toast } = useToast()
+
+  const filteredRows = (data?.rows || []).filter(row =>
+    !search || row.some(cell => cell.toLowerCase().includes(search.toLowerCase()))
+  )
+
+  const sortedRows = sortCol !== null
+    ? [...filteredRows].sort((a, b) => {
+        const va = a[sortCol] || '', vb = b[sortCol] || ''
+        const cmp = va.localeCompare(vb, undefined, { numeric: true })
+        return sortDir === 'asc' ? cmp : -cmp
+      })
+    : filteredRows
+
+  const toggleSort = (colIdx: number) => {
+    if (sortCol === colIdx) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(colIdx); setSortDir('asc') }
+  }
 
   const handleFiles = useCallback((files: File[]) => {
     if (!files.length) return
@@ -97,13 +117,21 @@ export default function CsvViewer() {
         </motion.div>
       ) : (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-2xl p-4 flex items-center justify-between">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-2xl p-4 flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <FileText className="w-5 h-5 text-stone-400" />
-              <div><p className="text-sm text-white">{fileName}</p><p className="text-xs text-stone-400">{data.rows.length} rows × {data.headers.length} cols</p></div>
+              <div><p className="text-sm text-white">{fileName}</p><p className="text-xs text-stone-400">{filteredRows.length}/{data.rows.length} rows × {data.headers.length} cols</p></div>
             </div>
-            <motion.button onClick={() => { setData(null); setFileName('') }} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              className="text-xs text-stone-500 hover:text-red-400">Clear</motion.button>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-stone-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input value={search} onChange={e => setSearch(e.target.value)}
+                  placeholder="Filter rows..."
+                  className="w-48 pl-8 pr-3 py-2 rounded-lg bg-stone-800/50 border border-stone-700 text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-emerald-500/40 transition-colors" />
+              </div>
+              <motion.button onClick={() => { setData(null); setFileName(''); setSearch(''); setSortCol(null) }} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                className="text-xs text-stone-500 hover:text-red-400">Clear</motion.button>
+            </div>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-2xl overflow-hidden">
@@ -113,12 +141,19 @@ export default function CsvViewer() {
                   <tr className="bg-stone-800/80">
                     <th className="sticky left-0 bg-stone-800/80 px-4 py-3 text-stone-400 font-medium w-12">#</th>
                     {data.headers.map((h, i) => (
-                      <th key={i} className="px-4 py-3 text-stone-300 font-medium whitespace-nowrap">{h || `Col ${i + 1}`}</th>
+                      <th key={i} onClick={() => toggleSort(i)}
+                        className="px-4 py-3 text-stone-300 font-medium whitespace-nowrap cursor-pointer hover:text-stone-100 select-none group transition-colors">
+                        <span className="inline-flex items-center gap-1">
+                          {h || `Col ${i + 1}`}
+                          {sortCol === i ? (sortDir === 'asc' ? <ArrowUp className="w-3 h-3 text-emerald-400" /> : <ArrowDown className="w-3 h-3 text-emerald-400" />)
+                            : <ArrowUpDown className="w-3 h-3 text-stone-600 opacity-0 group-hover:opacity-100 transition-opacity" />}
+                        </span>
+                      </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {data.rows.map((row, ri) => (
+                  {sortedRows.map((row, ri) => (
                     <tr key={ri} className="border-t border-stone-800/50 hover:bg-white/[0.02] transition-colors">
                       <td className="sticky left-0 bg-stone-950/90 px-4 py-2.5 text-stone-600 font-mono">{ri + 1}</td>
                       {row.map((cell, ci) => (
@@ -126,6 +161,9 @@ export default function CsvViewer() {
                       ))}
                     </tr>
                   ))}
+                  {sortedRows.length === 0 && (
+                    <tr><td colSpan={data.headers.length + 1} className="px-4 py-12 text-center text-stone-600">No matching rows</td></tr>
+                  )}
                 </tbody>
               </table>
             </div>

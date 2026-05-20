@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useToast } from '../components/Toast'
-import { Copy, ArrowLeftRight, Ruler, Thermometer, Weight, Clock, Droplets, History, Trash2 } from 'lucide-react'
+import { Copy, ArrowLeftRight, Ruler, Thermometer, Weight, Clock, Droplets, History, Trash2, Maximize2, Waves, Gauge, Compass } from 'lucide-react'
 
 const fadeIn = {
   initial: { opacity: 0, y: 12 },
@@ -9,14 +9,18 @@ const fadeIn = {
   transition: { duration: 0.35, ease: 'easeOut' as const }
 }
 
-type Category = 'length' | 'temperature' | 'weight' | 'time' | 'data'
+type Category = 'length' | 'temperature' | 'weight' | 'time' | 'data' | 'area' | 'volume' | 'speed' | 'pressure'
 
 const categories: { id: Category; label: string; icon: typeof Ruler }[] = [
   { id: 'length', label: 'Length', icon: Ruler },
+  { id: 'area', label: 'Area', icon: Maximize2 },
+  { id: 'volume', label: 'Volume', icon: Waves },
   { id: 'weight', label: 'Weight', icon: Weight },
   { id: 'temperature', label: 'Temp', icon: Thermometer },
+  { id: 'speed', label: 'Speed', icon: Gauge },
   { id: 'time', label: 'Time', icon: Clock },
   { id: 'data', label: 'Data', icon: Droplets },
+  { id: 'pressure', label: 'Pressure', icon: Compass },
 ]
 
 const units: Record<Category, { id: string; label: string }[]> = {
@@ -46,6 +50,28 @@ const units: Record<Category, { id: string; label: string }[]> = {
     { id: 'mb', label: 'Megabytes' }, { id: 'gb', label: 'Gigabytes' },
     { id: 'tb', label: 'Terabytes' }, { id: 'pb', label: 'Petabytes' },
   ],
+  area: [
+    { id: 'mm2', label: 'mm²' }, { id: 'cm2', label: 'cm²' },
+    { id: 'm2', label: 'm²' }, { id: 'km2', label: 'km²' },
+    { id: 'ha', label: 'Hectares' }, { id: 'ac', label: 'Acres' },
+    { id: 'ft2', label: 'ft²' }, { id: 'mi2', label: 'mi²' },
+  ],
+  volume: [
+    { id: 'ml', label: 'Milliliters' }, { id: 'l', label: 'Liters' },
+    { id: 'm3', label: 'm³' }, { id: 'gal', label: 'Gallons' },
+    { id: 'qt', label: 'Quarts' }, { id: 'pt', label: 'Pints' },
+    { id: 'cup', label: 'Cups' }, { id: 'floz', label: 'fl oz' },
+  ],
+  speed: [
+    { id: 'mps', label: 'm/s' }, { id: 'kph', label: 'km/h' },
+    { id: 'mph', label: 'mph' }, { id: 'knot', label: 'Knots' },
+    { id: 'mach', label: 'Mach' },
+  ],
+  pressure: [
+    { id: 'pa', label: 'Pascal' }, { id: 'kpa', label: 'kPa' },
+    { id: 'bar', label: 'Bar' }, { id: 'psi', label: 'PSI' },
+    { id: 'atm', label: 'Atm' }, { id: 'mmhg', label: 'mmHg' },
+  ],
 }
 
 // All conversions via base unit
@@ -69,6 +95,24 @@ function toBase(value: number, from: string): number {
     case 'tb': return value * 1024 * 1024 * 1024 * 1024
     case 'pb': return value * 1024 * 1024 * 1024 * 1024 * 1024
     case 'b': return value
+    // area → m²
+    case 'mm2': return value / 1_000_000; case 'cm2': return value / 10_000
+    case 'km2': return value * 1_000_000; case 'ha': return value * 10_000
+    case 'ac': return value * 4046.86; case 'ft2': return value * 0.092903
+    case 'mi2': return value * 2_589_988; case 'm2': return value
+    // volume → L
+    case 'm3': return value * 1000; case 'gal': return value * 3.78541
+    case 'qt': return value * 0.946353; case 'pt': return value * 0.473176
+    case 'cup': return value * 0.236588; case 'floz': return value * 0.0295735
+    case 'ml': return value / 1000; case 'l': return value
+    // speed → m/s
+    case 'kph': return value / 3.6; case 'mph': return value * 0.44704
+    case 'knot': return value * 0.514444; case 'mach': return value * 343
+    case 'mps': return value
+    // pressure → kPa
+    case 'pa': return value / 1000; case 'bar': return value * 100
+    case 'psi': return value * 6.89476; case 'atm': return value * 101.325
+    case 'mmhg': return value * 0.133322; case 'kpa': return value
     default: return value
   }
 }
@@ -93,6 +137,24 @@ function fromBase(value: number, to: string): number {
     case 'tb': return value / 1024 / 1024 / 1024 / 1024
     case 'pb': return value / 1024 / 1024 / 1024 / 1024 / 1024
     case 'b': return value
+    // area from m²
+    case 'mm2': return value * 1_000_000; case 'cm2': return value * 10_000
+    case 'km2': return value / 1_000_000; case 'ha': return value / 10_000
+    case 'ac': return value / 4046.86; case 'ft2': return value / 0.092903
+    case 'mi2': return value / 2_589_988; case 'm2': return value
+    // volume from L
+    case 'm3': return value / 1000; case 'gal': return value / 3.78541
+    case 'qt': return value / 0.946353; case 'pt': return value / 0.473176
+    case 'cup': return value / 0.236588; case 'floz': return value / 0.0295735
+    case 'ml': return value * 1000; case 'l': return value
+    // speed from m/s
+    case 'kph': return value * 3.6; case 'mph': return value / 0.44704
+    case 'knot': return value / 0.514444; case 'mach': return value / 343
+    case 'mps': return value
+    // pressure from kPa
+    case 'pa': return value * 1000; case 'bar': return value / 100
+    case 'psi': return value / 6.89476; case 'atm': return value / 101.325
+    case 'mmhg': return value / 0.133322; case 'kpa': return value
     default: return value
   }
 }
@@ -149,7 +211,7 @@ export default function UnitConverter() {
     <motion.div {...fadeIn} className="max-w-3xl mx-auto space-y-6">
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold tracking-tight text-white">Unit Converter</h1>
-        <p className="text-white/50 text-sm">Convert between length, weight, temperature, time &amp; data units</p>
+        <p className="text-white/50 text-sm">Convert between length, area, volume, weight, temperature, speed, time, data &amp; pressure</p>
       </div>
 
       {/* Category tabs */}
