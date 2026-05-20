@@ -1,7 +1,7 @@
-import { useState, useCallback } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useCallback, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useToast } from '../components/Toast'
-import { Copy, ArrowLeftRight } from 'lucide-react'
+import { Copy, ArrowLeftRight, History, Trash2 } from 'lucide-react'
 
 const fadeIn = {
   initial: { opacity: 0, y: 12 },
@@ -69,11 +69,23 @@ function parseHsl(input: string) {
   return null
 }
 
+const HISTORY_KEY = 'colorconverter-history'
+const MAX_HISTORY = 12
+
 export default function ColorConverter() {
   const [input, setInput] = useState('')
   const [fromFormat, setFromFormat] = useState<Format>('hex')
   const [color, setColor] = useState<{ hex: string; rgb: string; hsl: string; r: number; g: number; b: number } | null>(null)
+  const [history, setHistory] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]') } catch { return [] }
+  })
   const { toast } = useToast()
+
+  useEffect(() => { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)) }, [history])
+
+  const addToHistory = useCallback((hex: string) => {
+    setHistory((prev) => [hex, ...prev.filter((h) => h !== hex)].slice(0, MAX_HISTORY))
+  }, [])
 
   const parse = useCallback(() => {
     try {
@@ -81,35 +93,26 @@ export default function ColorConverter() {
         const rgb = hexToRgb(input.trim())
         if (!rgb) { toast('Invalid hex color'); return }
         const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b)
-        setColor({
-          hex: rgbToHex(rgb.r, rgb.g, rgb.b),
-          rgb: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`,
-          hsl: `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`,
-          ...rgb
-        })
+        const hex = rgbToHex(rgb.r, rgb.g, rgb.b)
+        setColor({ hex, rgb: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`, hsl: `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`, ...rgb })
+        addToHistory(hex)
       } else if (fromFormat === 'rgb') {
         const rgb = parseRgb(input.trim())
         if (!rgb) { toast('Use format: rgb(R, G, B) or R, G, B'); return }
         const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b)
-        setColor({
-          hex: rgbToHex(rgb.r, rgb.g, rgb.b),
-          rgb: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`,
-          hsl: `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`,
-          ...rgb
-        })
+        const hex = rgbToHex(rgb.r, rgb.g, rgb.b)
+        setColor({ hex, rgb: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`, hsl: `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`, ...rgb })
+        addToHistory(hex)
       } else {
         const hsl = parseHsl(input.trim())
         if (!hsl) { toast('Use format: hsl(H, S%, L%) or H, S, L'); return }
         const rgb = hslToRgb(hsl.h, hsl.s, hsl.l)
-        setColor({
-          hex: rgbToHex(rgb.r, rgb.g, rgb.b),
-          rgb: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`,
-          hsl: `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`,
-          ...rgb
-        })
+        const hex = rgbToHex(rgb.r, rgb.g, rgb.b)
+        setColor({ hex, rgb: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`, hsl: `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`, ...rgb })
+        addToHistory(hex)
       }
     } catch { toast('Invalid color input') }
-  }, [input, fromFormat, toast])
+  }, [input, fromFormat, toast, addToHistory])
 
   const copyValue = (v: string) => { navigator.clipboard.writeText(v); toast('Copied') }
 
@@ -193,6 +196,53 @@ export default function ColorConverter() {
             ))}
           </div>
         </motion.div>
+      )}
+
+      {/* Color history */}
+      {history.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs text-white/30">
+              <History className="w-3.5 h-3.5" />
+              Recent colors
+            </div>
+            <button
+              onClick={() => { setHistory([]); localStorage.removeItem(HISTORY_KEY) }}
+              className="p-1 rounded-md hover:bg-white/10 transition-colors"
+              title="Clear history"
+            >
+              <Trash2 className="w-3 h-3 text-white/20" />
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <AnimatePresence>
+              {history.map((hex) => (
+                <motion.button
+                  key={hex}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  whileHover={{ scale: 1.15 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => {
+                    setInput(hex)
+                    setFromFormat('hex')
+                    const rgb = hexToRgb(hex)
+                    if (rgb) {
+                      const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b)
+                      setColor({ hex, rgb: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`, hsl: `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`, ...rgb })
+                    }
+                    addToHistory(hex)
+                  }}
+                  className="w-9 h-9 rounded-lg border border-white/10 hover:border-amber-500/30 transition-all shadow-sm"
+                  style={{ backgroundColor: hex }}
+                  title={hex}
+                  aria-label={`Color ${hex}`}
+                />
+              ))}
+            </AnimatePresence>
+          </div>
+        </div>
       )}
     </motion.div>
   )

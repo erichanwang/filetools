@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useToast } from '../components/Toast'
-import { Copy, ArrowLeftRight, Ruler, Thermometer, Weight, Clock, Droplets } from 'lucide-react'
+import { Copy, ArrowLeftRight, Ruler, Thermometer, Weight, Clock, Droplets, History, Trash2 } from 'lucide-react'
 
 const fadeIn = {
   initial: { opacity: 0, y: 12 },
@@ -51,24 +51,19 @@ const units: Record<Category, { id: string; label: string }[]> = {
 // All conversions via base unit
 function toBase(value: number, from: string): number {
   switch (from) {
-    // Length → meters
     case 'mm': return value / 1000; case 'cm': return value / 100
     case 'km': return value * 1000; case 'in': return value * 0.0254
     case 'ft': return value * 0.3048; case 'yd': return value * 0.9144
     case 'mi': return value * 1609.344; case 'm': return value
-    // Weight → grams
     case 'mg': return value / 1000; case 'kg': return value * 1000
     case 't': return value * 1_000_000; case 'oz': return value * 28.3495
     case 'lb': return value * 453.592; case 'g': return value
-    // Temperature → handled specially
     case 'c': return value; case 'f': return (value - 32) * 5/9
     case 'k': return value - 273.15
-    // Time → seconds
     case 'ms': return value / 1000; case 'min': return value * 60
     case 'hr': return value * 3600; case 'day': return value * 86400
     case 'wk': return value * 604800; case 'yr': return value * 31536000
     case 's': return value
-    // Data → bytes
     case 'kb': return value * 1024; case 'mb': return value * 1024 * 1024
     case 'gb': return value * 1024 * 1024 * 1024
     case 'tb': return value * 1024 * 1024 * 1024 * 1024
@@ -80,24 +75,19 @@ function toBase(value: number, from: string): number {
 
 function fromBase(value: number, to: string): number {
   switch (to) {
-    // Length
     case 'mm': return value * 1000; case 'cm': return value * 100
     case 'km': return value / 1000; case 'in': return value / 0.0254
     case 'ft': return value / 0.3048; case 'yd': return value / 0.9144
     case 'mi': return value / 1609.344; case 'm': return value
-    // Weight
     case 'mg': return value * 1000; case 'kg': return value / 1000
     case 't': return value / 1_000_000; case 'oz': return value / 28.3495
     case 'lb': return value / 453.592; case 'g': return value
-    // Temperature
     case 'c': return value; case 'f': return value * 9/5 + 32
     case 'k': return value + 273.15
-    // Time
     case 'ms': return value * 1000; case 'min': return value / 60
     case 'hr': return value / 3600; case 'day': return value / 86400
     case 'wk': return value / 604800; case 'yr': return value / 31536000
     case 's': return value
-    // Data
     case 'kb': return value / 1024; case 'mb': return value / 1024 / 1024
     case 'gb': return value / 1024 / 1024 / 1024
     case 'tb': return value / 1024 / 1024 / 1024 / 1024
@@ -107,12 +97,28 @@ function fromBase(value: number, to: string): number {
   }
 }
 
+const HISTORY_KEY = 'unitconverter-history'
+const MAX_HISTORY = 10
+
+interface HistoryEntry {
+  from: string
+  to: string
+  input: string
+  result: string
+  category: Category
+}
+
 export default function UnitConverter() {
   const [category, setCategory] = useState<Category>('length')
   const [fromUnit, setFromUnit] = useState('cm')
   const [toUnit, setToUnit] = useState('in')
   const [input, setInput] = useState('')
+  const [history, setHistory] = useState<HistoryEntry[]>(() => {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]') } catch { return [] }
+  })
   const { toast } = useToast()
+
+  useEffect(() => { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)) }, [history])
 
   const result = (() => {
     const val = parseFloat(input)
@@ -132,6 +138,11 @@ export default function UnitConverter() {
     if (!result) return
     navigator.clipboard.writeText(result)
     toast('Copied')
+    // Add to history
+    setHistory((prev) => {
+      const entry: HistoryEntry = { from: fromUnit, to: toUnit, input, result, category }
+      return [entry, ...prev.filter((e) => e.input !== input || e.from !== fromUnit || e.to !== toUnit)].slice(0, MAX_HISTORY)
+    })
   }
 
   return (
@@ -191,12 +202,14 @@ export default function UnitConverter() {
 
         {/* Swap */}
         <div className="flex justify-center">
-          <button
+          <motion.button
             onClick={swap}
+            whileHover={{ rotate: 180 }}
+            transition={{ duration: 0.3 }}
             className="p-2 rounded-full bg-white/5 hover:bg-amber-500/20 border border-white/10 hover:border-amber-500/30 transition-all text-white/30 hover:text-amber-300"
           >
             <ArrowLeftRight className="w-4 h-4" />
-          </button>
+          </motion.button>
         </div>
 
         {/* To */}
@@ -229,6 +242,62 @@ export default function UnitConverter() {
           </button>
         )}
       </div>
+
+      {/* History */}
+      {history.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs text-white/30">
+              <History className="w-3.5 h-3.5" />
+              Recent conversions
+            </div>
+            <button
+              onClick={() => { setHistory([]); localStorage.removeItem(HISTORY_KEY) }}
+              className="p-1 rounded-md hover:bg-white/10 transition-colors"
+              title="Clear history"
+            >
+              <Trash2 className="w-3 h-3 text-white/20" />
+            </button>
+          </div>
+          <div className="space-y-1.5">
+            <AnimatePresence>
+              {history.map((entry, i) => (
+                <motion.button
+                  key={`${entry.input}-${entry.from}-${entry.to}-${i}`}
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  onClick={() => {
+                    setCategory(entry.category)
+                    setFromUnit(entry.from)
+                    setToUnit(entry.to)
+                    setInput(entry.input)
+                  }}
+                  className="w-full flex items-center gap-3 bg-white/5 border border-white/5 rounded-lg px-3 py-2 hover:bg-white/10 transition-colors text-left"
+                >
+                  <span className="text-xs font-mono text-white/60">
+                    {entry.input} {entry.from}
+                  </span>
+                  <ArrowLeftRight className="w-3 h-3 text-white/20" />
+                  <span className="text-xs font-mono text-amber-300">
+                    {entry.result} {entry.to}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      navigator.clipboard.writeText(entry.result)
+                      toast('Copied')
+                    }}
+                    className="ml-auto p-1 rounded hover:bg-white/10 transition-colors"
+                  >
+                    <Copy className="w-3 h-3 text-white/20" />
+                  </button>
+                </motion.button>
+              ))}
+            </AnimatePresence>
+          </div>
+        </div>
+      )}
     </motion.div>
   )
 }
