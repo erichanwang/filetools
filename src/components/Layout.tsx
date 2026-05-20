@@ -7,12 +7,14 @@ import {
   FileType, Eye, Pencil, FileImage, FileJson, QrCode,
   SwatchBook, Camera, Fingerprint, Code, Table,
   Shield, Keyboard, Type, ArrowLeftRight,
-  Crop, Layout as LayoutIcon, Settings, Sun, Moon
+  Crop, Layout as LayoutIcon, Settings, Sun, Moon, Clock
 } from 'lucide-react'
 import AnimatedBackground from './AnimatedBackground'
 import CommandPalette from './CommandPalette'
 import Breadcrumbs from './Breadcrumbs'
+import KeyboardShortcutsModal from './KeyboardShortcutsModal'
 import { useTheme } from './ThemeContext'
+import { useRecent } from './RecentContext'
 
 const navGroups = [
   {
@@ -60,15 +62,44 @@ const navGroups = [
   },
 ]
 
+const recentLabelMap: Record<string, string> = {
+  '/file-converter': 'File Converter',
+  '/background-remover': 'Bg Remover',
+  '/image-compressor': 'Compressor',
+  '/image-filters': 'Filters',
+  '/image-cropper': 'Cropper',
+  '/image-to-pdf': 'Image→PDF',
+  '/qr-generator': 'QR Generator',
+  '/color-palette': 'Palette',
+  '/ascii-art': 'ASCII Art',
+  '/pdf-operations': 'PDF Tools',
+  '/ocr': 'OCR',
+  '/metadata-viewer': 'Metadata',
+  '/batch-rename': 'Rename',
+  '/exif-tool': 'EXIF',
+  '/file-checksum': 'Checksum',
+  '/base64': 'Base64',
+  '/json-tool': 'JSON',
+  '/csv-viewer': 'CSV',
+  '/jwt-decoder': 'JWT',
+  '/text-tools': 'Text',
+  '/password-generator': 'Passwords',
+  '/color-converter': 'Colors',
+  '/unit-converter': 'Units',
+  '/settings': 'Settings',
+}
+
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const location = useLocation()
   const { resolved, setTheme } = useTheme()
+  const { recent, addRecent } = useRecent()
 
   useEffect(() => {
     setMobileOpen(false)
-  }, [location.pathname])
+    if (location.pathname !== '/') addRecent(location.pathname)
+  }, [location.pathname, addRecent])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -142,6 +173,7 @@ export default function Layout() {
 
           {/* Nav */}
           <nav className="flex-1 overflow-y-auto px-2 space-y-5">
+            {/* Home */}
             <NavLink
               to="/"
               className={({ isActive }) =>
@@ -156,6 +188,34 @@ export default function Layout() {
               {!collapsed && <span>Home</span>}
             </NavLink>
 
+            {/* Recent section */}
+            {!collapsed && recent.length > 0 && (
+              <div>
+                <div className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/15">
+                  Recent
+                </div>
+                <div className="space-y-1">
+                  {recent.slice(0, 4).map((path) => (
+                    <NavLink
+                      key={path}
+                      to={path}
+                      className={({ isActive }) =>
+                        `flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0 ${
+                          isActive
+                            ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
+                            : 'text-white/30 hover:text-white/50 hover:bg-white/5 border border-transparent'
+                        }`
+                      }
+                    >
+                      <Clock className="w-3 h-3 shrink-0" />
+                      <span className="truncate">{recentLabelMap[path] || path}</span>
+                    </NavLink>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tool groups */}
             {navGroups.map((group) => (
               <div key={group.label}>
                 {!collapsed && (
@@ -185,31 +245,41 @@ export default function Layout() {
             ))}
           </nav>
 
-          {/* Settings link */}
-          <div className="px-2 mt-auto">
-            <NavLink
-              to="/settings"
-              className={({ isActive }) =>
-                `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all shrink-0 ${
-                  isActive
-                    ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
-                    : 'text-white/40 hover:text-white/70 hover:bg-white/5 border border-transparent'
-                }`
-              }
-            >
-              <Settings className="w-4 h-4 shrink-0" />
-              {!collapsed && <span>Settings</span>}
-            </NavLink>
-          </div>
+          {/* Bottom section */}
+          <div className="shrink-0">
+            {/* Keyboard shortcuts */}
+            {!collapsed && (
+              <div className="px-2 pb-2">
+                <KeyboardShortcutsModal />
+              </div>
+            )}
 
-          {/* Footer */}
-          {!collapsed && (
-            <div className="px-4 pt-4 border-t border-white/5 shrink-0">
-              <p className="text-[10px] text-white/10 text-center">
-                All processing runs locally in your browser
-              </p>
+            {/* Settings */}
+            <div className="px-2">
+              <NavLink
+                to="/settings"
+                className={({ isActive }) =>
+                  `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all shrink-0 ${
+                    isActive
+                      ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
+                      : 'text-white/40 hover:text-white/70 hover:bg-white/5 border border-transparent'
+                  }`
+                }
+              >
+                <Settings className="w-4 h-4 shrink-0" />
+                {!collapsed && <span>Settings</span>}
+              </NavLink>
             </div>
-          )}
+
+            {/* Footer */}
+            {!collapsed && (
+              <div className="px-4 pt-3 border-t border-white/5">
+                <p className="text-[10px] text-white/10 text-center">
+                  All processing runs locally
+                </p>
+              </div>
+            )}
+          </div>
         </motion.aside>
       </AnimatePresence>
 

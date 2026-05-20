@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import { ToastProvider } from './components/Toast'
 import { ThemeProvider } from './components/ThemeContext'
+import { RecentProvider } from './components/RecentContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import { PageSkeleton } from './components/Skeleton'
 import Home from './pages/Home'
@@ -36,7 +37,8 @@ export default function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <ToastProvider>
+        <RecentProvider>
+          <ToastProvider>
           <Routes>
             <Route element={<Layout />}>
               <Route index element={<Home />} />
@@ -70,7 +72,8 @@ export default function App() {
               <Route path="settings" element={<Suspense fallback={<PageSkeleton />}><SettingsPage /></Suspense>} />
             </Route>
           </Routes>
-        </ToastProvider>
+          </ToastProvider>
+        </RecentProvider>
       </ThemeProvider>
     </ErrorBoundary>
   )
