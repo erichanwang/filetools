@@ -81,7 +81,7 @@ const recentLabelMap: Record<string, string> = {
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
-  const [isDesktop, setIsDesktop] = useState(false)
+  const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches)
   const location = useLocation()
   const { resolved, setTheme } = useTheme()
   const { recent, addRecent } = useRecent()
@@ -141,7 +141,7 @@ export default function Layout() {
               <div className="w-6 h-6 rounded-md bg-stone-800 border border-stone-700/60 flex items-center justify-center">
                 <LayoutIcon className="w-3 h-3 text-stone-300" />
               </div>
-              <span className="font-semibold text-[13px] tracking-tight text-stone-200 hidden sm:inline">
+              <span className="font-semibold text-[13px] tracking-tight text-stone-200">
                 FileTools
               </span>
             </NavLink>
@@ -195,7 +195,7 @@ export default function Layout() {
       {/* ========== SIDEBAR ========== */}
       <aside
         className={`fixed left-0 top-0 h-full z-50 bg-stone-950/98 border-r border-stone-800/50 backdrop-blur-xl
-          flex flex-col py-2 overflow-hidden transition-transform duration-250
+          flex flex-col py-2 overflow-hidden transition-transform duration-[250ms]
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
           md:translate-x-0 md:z-20`}
         style={{ width: isDesktop ? sidebarWidth : 260, paddingTop: HEADER_H + 8 }}

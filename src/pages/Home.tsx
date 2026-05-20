@@ -85,17 +85,15 @@ export default function Home() {
         transition={{ duration: 0.6 }}
         className="text-center space-y-5 py-8"
       >
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-medium">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 text-xs font-medium">
           <Sparkles className="w-3 h-3" />
           24 local‑first tools
         </div>
         <div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight">
-            <span className="bg-gradient-to-r from-amber-400 via-rose-400 to-amber-500 bg-clip-text text-transparent animate-shimmer [background-size:200%_auto]">
-              FileTools
-            </span>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-stone-100">
+            FileTools
           </h1>
-          <p className="text-white/30 mt-4 text-sm sm:text-base max-w-lg mx-auto font-light">
+          <p className="text-stone-500 mt-4 text-sm sm:text-base max-w-lg mx-auto font-light">
             Everything you need for files, images, PDFs, and data — all processed securely in your browser.
           </p>
         </div>
@@ -111,11 +109,11 @@ export default function Home() {
             <motion.div
               key={s.label}
               variants={item}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/5"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-stone-800/50 border border-stone-800/50"
             >
-              <s.icon className="w-4 h-4 text-white/20" />
-              <span className="text-sm font-medium text-white/60">{s.value}</span>
-              <span className="text-xs text-white/20">{s.label}</span>
+              <s.icon className="w-4 h-4 text-stone-400" />
+              <span className="text-sm font-medium text-stone-300">{s.value}</span>
+              <span className="text-xs text-stone-500">{s.label}</span>
             </motion.div>
           ))}
         </motion.div>
@@ -125,7 +123,7 @@ export default function Home() {
       <motion.div variants={container} initial="hidden" animate="show" className="space-y-12">
         {categories.map((cat) => (
           <div key={cat.label}>
-            <h2 className="text-xs font-semibold uppercase tracking-[0.15em] text-white/15 mb-4 px-1">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.15em] text-stone-500 mb-4 px-1">
               {cat.label}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -136,22 +134,22 @@ export default function Home() {
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => navigate(f.to)}
-                  className="group relative bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 cursor-pointer
-                    hover:bg-white/[0.05] hover:border-white/10 transition-all duration-300 overflow-hidden"
+                  className="group relative bg-stone-800/30 border border-stone-800/50 rounded-2xl p-5 cursor-pointer
+                    hover:bg-stone-800/50 hover:border-stone-700/40 transition-all duration-300 overflow-hidden"
                 >
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                    <div className="absolute inset-0 bg-gradient-to-br from-amber-500/[0.04] to-rose-500/[0.04]" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-amber-500/[0.06] to-rose-500/[0.04]" />
                   </div>
                   <div className="relative space-y-3">
-                    <div className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center
+                    <div className="w-9 h-9 rounded-xl bg-stone-800/60 border border-stone-800/50 flex items-center justify-center
                       group-hover:bg-amber-500/10 group-hover:border-amber-500/20 transition-all duration-300">
-                      <f.icon className="w-4 h-4 text-white/25 group-hover:text-amber-300 transition-colors duration-300" />
+                      <f.icon className="w-4 h-4 text-stone-400 group-hover:text-amber-500 transition-colors duration-300" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-medium text-white/70 group-hover:text-white/90 transition-colors duration-300">
+                      <h3 className="text-sm font-medium text-stone-200 group-hover:text-stone-100 transition-colors duration-300">
                         {f.title}
                       </h3>
-                      <p className="text-xs text-white/20 mt-1 leading-relaxed group-hover:text-white/30 transition-colors duration-300">
+                      <p className="text-xs text-stone-500 mt-1 leading-relaxed group-hover:text-stone-400 transition-colors duration-300">
                         {f.desc}
                       </p>
                     </div>
@@ -170,7 +168,7 @@ export default function Home() {
         transition={{ delay: 0.6 }}
         className="text-center pb-8"
       >
-        <p className="text-xs text-white/10">
+        <p className="text-xs text-stone-600">
           No servers. No uploads. Your files never leave your device.
         </p>
       </motion.div>
