@@ -34,7 +34,7 @@ export default function Breadcrumbs() {
   if (segments.length === 0) return null
 
   return (
-    <nav className="flex items-center gap-1.5 text-sm mb-6 animate-fade-in-up">
+    <nav className="flex items-center gap-1.5 text-sm mb-6">
       <Link
         to="/"
         className="p-1 rounded-lg hover:bg-white/5 transition-colors text-white/20 hover:text-white/40"
